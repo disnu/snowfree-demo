@@ -657,7 +657,8 @@ function update(dt) {
     helicopter = null;
     burst(wreck.x, wreck.y - 60, '#ff9100');
     helicopterRespawnAt = score + HELICOPTER_RESPAWN_SCORE;
-    toast('HELICOPTER DOWN!');
+    awardScore(1000, 'helicopter');
+    toast('HELICOPTER DOWN! +1000');
     closePatrol = entities.some(e => e.type === 'patrol' && !e.hit && Math.hypot(e.x - board.x, e.y - board.y) < 270);
   }
   for (const e of entities) {
