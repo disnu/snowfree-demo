@@ -16,6 +16,37 @@
   --outline: -2px -2px 0 #14213a, 2px -2px 0 #14213a, -2px 2px 0 #14213a, 2px 2px 0 #14213a, 4px 4px 0 #14213a;
 }
 * { box-sizing: border-box; }
+#upgradeOverlay[hidden] { display: none; }
+#upgradeOverlay { position: absolute; inset: 0; z-index: 20; display: grid; place-items: center; overflow: auto; padding: 24px; background: #080f25ed; color: #e9efff; animation: upgrade-fade .25s ease-out; }
+.upgrade-panel { width: min(950px, 100%); text-align: center; margin: auto; }
+.upgrade-panel .eyebrow { color: #e8ee74; font-size: 10px; line-height: 1.8; }
+.upgrade-panel h2 { font-size: clamp(16px, 3vw, 26px); line-height: 1.6; }
+.upgrade-panel p, #upgradeCollection { font-size: 9px; line-height: 2; color: #a8b9d9; }
+#upgradeCards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin: 24px 0; perspective: 1000px; }
+.upgrade-card { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 24px 18px; min-height: 320px; text-align: center; border: 2px solid #7c98c9; background: linear-gradient(160deg, #26395e, #121d35); box-shadow: 6px 6px 0 #0008; animation: card-enter .5s both; animation-delay: var(--card-delay); transition: border-color .2s, background .2s; }
+.upgrade-card small { color: #90b6ed; font-size: 7px; }
+.upgrade-card strong { color: #fff; font-size: 15px; line-height: 1.6; }
+.upgrade-card > span:not(.card-icon) { font-size: 9px; line-height: 1.9; color: #c4d0e7; }
+.upgrade-card b { margin-top: auto; color: #e8ee74; font-size: 8px; }
+.card-icon { display: grid; place-items: center; height: 64px; min-width: 64px; padding: 8px; color: #e8ee74; background: #0a1429; border: 2px solid #485e83; font-size: 18px; text-shadow: 3px 3px #3a5173; }
+.upgrade-card:hover, .upgrade-card:focus-visible { border-color: #e8ee74; background: #31436a; }
+.upgrade-card.chosen { animation: card-chosen .65s both; border-color: #e8ee74; }
+.upgrade-card.dismissed { animation: card-dismiss .35s both; }
+@keyframes upgrade-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes card-enter { from { opacity: 0; transform: translateY(55px) rotateX(15deg) scale(.9); } to { opacity: 1; transform: none; } }
+@keyframes card-chosen { 30% { transform: translateY(-12px) scale(1.05); box-shadow: 0 0 45px #e8ee7477; } 100% { opacity: 0; transform: translateY(-60px) scale(1.1); } }
+@keyframes card-dismiss { to { opacity: 0; transform: translateY(35px) scale(.9); } }
+@media (max-width: 650px) {
+  #upgradeOverlay { padding: 14px; }
+  #upgradeCards { grid-template-columns: 1fr; gap: 10px; margin: 14px 0; }
+  .upgrade-card { min-height: 0; padding: 14px; gap: 9px; }
+  .card-icon { display: none; }
+  .upgrade-card strong { font-size: 12px; }
+  .upgrade-panel h2 { margin: 10px 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #upgradeOverlay, .upgrade-card, .upgrade-card.chosen, .upgrade-card.dismissed { animation-duration: .01ms; animation-delay: 0ms; }
+}
 body { margin: 0; }
 strong, b { font-weight: 400; }
 header { height: 58px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #39435c; }
@@ -131,6 +162,15 @@ footer { height: 33px; display: flex; align-items: center; justify-content: spac
       <div><strong id="trickScore">0</strong><strong id="multiplier">×1.0</strong></div>
       <span class="score-underline"></span>
     </div>
+    <section id="upgradeOverlay" role="dialog" aria-modal="true" aria-labelledby="upgradeTitle" hidden>
+      <div class="upgrade-panel">
+        <div class="eyebrow" id="upgradeMilestone"></div>
+        <h2 id="upgradeTitle">MAKE MORE TROUBLE.</h2>
+        <p>Choose one upgrade for this run. The mountain can wait.</p>
+        <div id="upgradeCards"></div>
+        <small id="upgradeCollection">Choose with 1 / 2 / 3, or click a card.</small>
+      </div>
+    </section>
     <div id="overlay">
       <div class="eyebrow">NO RIDER. NO RULES.</div>
       <h1>A loose board.<br>A mountain of trouble.</h1>
@@ -142,6 +182,292 @@ footer { height: 33px; display: flex; align-items: center; justify-content: spac
   </div>
   <footer><span>100 / SKIER · 500 × STARS / ESCAPE · UP TO 2.5× WITH SPEED</span><span>SPACE / CLICK / TAP TO HOP</span></footer>
 </main>
+<script>
+/* Run-local upgrades. Simulation stays frozen while cards animate. */
+const upgradeCatalog = [
+  ['rain', 'Rain From Above', 'STUNT', 'BOOM', 'Each normal or extra Bunny Board hop triggers one instant blast beneath you. Rainbow jumps rain explosions; more ranks speed up that rain. Blasts score skier and patrol hits.'],
+  ['skis', 'Loose Cannons', 'CHAIN REACTION', 'II', 'Downed skiers release skis downhill, scoring hits on skiers and patrol. More ranks add piercing hits.'],
+  ['domino', 'Domino Effect', 'CHAIN REACTION', '>>', 'Downed skiers tumble downhill into others. More ranks extend their reach.'],
+  ['snowball', 'Snowball Effect', 'CHAIN REACTION', 'O', 'Carving charges a rolling snowball. Hop to launch it downhill; it grows as it rolls. More ranks make bigger snowballs, with the same charge time.'],
+  ['debris', 'Explosive Exit', 'CHAIN REACTION', '*', 'Helicopter takedowns launch a fan of debris that downs patrol and skiers. More ranks add fragments.'],
+  ['bunny', 'Bunny Board', 'MOVEMENT', '^^', 'Hop again while airborne. Each rank adds one extra hop per flight.'],
+  ['powder', 'Powder Surfer', 'MOVEMENT', '~', 'Rough snow boosts speed instead of slowing you. More ranks strengthen the boost.'],
+  ['sling', 'Slingshot', 'MOVEMENT', '=>', 'Ground braking stores energy. Release to boost downhill. More ranks increase the boost.'],
+  ['edges', 'Hot Edges', 'MOVEMENT', '//', 'Hard carving leaves glowing trails that trip pursuers. More ranks extend trail lifetime.'],
+  ['shave', 'Close Shave', 'RISK / REWARD', '!', 'Skim past rocks and trees without hitting them for 100 points per rank, once per obstacle.'],
+  ['enemy', 'Public Enemy', 'RISK / REWARD', '*****', 'Patrol arrival and helicopter drops are faster. Pursuit points increase by 50% per rank.'],
+  ['glass', 'Glass Cannon', 'RISK / REWARD', 'X', 'Skier takedowns score 50% more per rank, but you take 50% more obstacle damage per rank.'],
+  ['encore', 'Encore', 'STUNT', 'RAINBOW', 'Helicopter takedowns create a rainbow ramp ahead with a clear landing lane. More ranks add 250 takedown points.'],
+  ['repair', 'Scrap Repairs', 'SURVIVAL', '+', 'Every patrol knockdown repairs 5 board health per rank, including chain reactions.'],
+  ['wind', 'Second Wind', 'SURVIVAL', '<3', 'Gain one rescue charge: survive a fatal hit or capture with 30 health, an escape jump and brief protection.'],
+  ['memory', 'Long Memory', 'SCORING', '...', 'Add one second per rank to the Vengeance chain window.'],
+  ['crowd', 'Crowd Pleaser', 'STUNT', '+++', 'Each skier after the first hit during one flight adds a 250-point group bonus per rank.']
+];
+let upgrades = {}, nextUpgradeScore = 10000, upgradeOffers = [], upgradeSelectionTimer;
+let shots = [], hotTrails = [], snowCharge = 0, slingCharge = 0, extraHops = 0, flightHits = 0, rescueCharges = 0, edgeTimer = 0;
+let bombs = [], bombRain = false, bombTimer = 0;
+const rank = id => upgrades[id] || 0;
+const upgradeOverlay = document.getElementById('upgradeOverlay');
+const upgradeCards = document.getElementById('upgradeCards');
+function resetUpgrades() {
+  clearTimeout(upgradeSelectionTimer);
+  upgrades = {}; nextUpgradeScore = 10000; upgradeOffers = [];
+  shots = []; hotTrails = []; snowCharge = 0; slingCharge = 0;
+  bombs = []; bombRain = false; bombTimer = 0;
+  extraHops = 0; flightHits = 0; rescueCharges = 0; edgeTimer = 0;
+  upgradeOverlay.hidden = true;
+}
+function offerUpgrade() {
+  if (mode !== 'playing' || score < nextUpgradeScore) return;
+  mode = 'upgrading'; keys.clear(); touch = null;
+  upgradeOffers = [...upgradeCatalog];
+  for (let i = upgradeOffers.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [upgradeOffers[i], upgradeOffers[j]] = [upgradeOffers[j], upgradeOffers[i]];
+  }
+  upgradeOffers = upgradeOffers.slice(0, 3);
+  document.getElementById('upgradeMilestone').textContent = `${nextUpgradeScore.toLocaleString()} POINTS · UPGRADE EARNED`;
+  nextUpgradeScore += 10000;
+  upgradeCards.replaceChildren();
+  upgradeOffers.forEach(([id, name, category, icon, description], i) => {
+    const card = document.createElement('button');
+    card.className = 'upgrade-card'; card.style.setProperty('--card-delay', `${i * 100}ms`);
+    card.innerHTML = `<small>${category} · ${i + 1}</small><span class="card-icon" aria-hidden="true">${icon}</span><strong>${name}</strong><span>${description}</span><b>${rank(id) ? `UPGRADE TO RANK ${rank(id) + 1}` : 'NEW UPGRADE'}</b>`;
+    card.addEventListener('click', () => chooseUpgrade(i));
+    upgradeCards.append(card);
+  });
+  document.getElementById('upgradeCollection').textContent = Object.keys(upgrades).length
+    ? 'YOUR BUILD: ' + upgradeCatalog.filter(([id]) => rank(id)).map(([id, name]) => `${name} ${rank(id)}`).join(' · ')
+    : 'Choose with 1 / 2 / 3, or click a card.';
+  upgradeOverlay.hidden = false;
+  upgradeCards.firstElementChild.focus({ preventScroll: true });
+}
+function chooseUpgrade(index) {
+  if (mode !== 'upgrading' || !upgradeOffers[index]) return;
+  mode = 'upgrade-selected';
+  const [id, name] = upgradeOffers[index]; upgrades[id] = rank(id) + 1;
+  if (id === 'wind') rescueCharges++;
+  [...upgradeCards.children].forEach((card, i) => {
+    card.disabled = true; card.classList.add(i === index ? 'chosen' : 'dismissed');
+  });
+  upgradeSelectionTimer = setTimeout(() => {
+    upgradeOverlay.hidden = true; keys.clear(); touch = null;
+    mode = document.hidden ? 'paused' : 'playing';
+    ui.pause.textContent = mode === 'paused' ? 'Resume · P' : 'Pause · P';
+    toast(`${name.toUpperCase()}!`);
+    offerUpgrade();
+  }, 650);
+}
+window.addEventListener('keydown', e => {
+  if (upgradeOverlay.hidden) return;
+  if (!e.repeat && ['1', '2', '3'].includes(e.key)) chooseUpgrade(Number(e.key) - 1);
+  if (e.key === 'Tab') {
+    const cards = [...upgradeCards.children].filter(c => !c.disabled);
+    e.preventDefault();
+    if (cards.length) cards[(cards.indexOf(document.activeElement) + (e.shiftKey ? cards.length - 1 : 1)) % cards.length].focus();
+  }
+});
+function launchShot(kind, x, y, vx = 0) {
+  if (shots.length >= 120) return;
+  const snowRank = Math.max(1, rank('snowball'));
+  const shot = {kind, x, y, vx, speed: Math.max(600, board.speed + 240), life: kind === 'domino' ? .7 + rank('domino') * .3 : 2.5,
+    radius: kind === 'snowball' ? 10 + (snowRank - 1) * 4 : 10,
+    maxRadius: 32 + (snowRank - 1) * 6, angle: 0, part: shots.length % 3,
+    hits: kind === 'skis' ? rank('skis') : kind === 'snowball' ? 6 : 1, victims: new Set()};
+  shots.push(shot);
+  return shot;
+}
+function skierUpgrades(e) {
+  if (rank('skis') && launchShot('skis', e.x, e.y)) e.skisReleased = true;
+  if (rank('domino')) {
+    const shot = launchShot('domino', e.x, e.y);
+    if (shot) {
+      shot.pose = skierPose(e);
+      shot.skier = e;
+      e.dominoLaunched = true;
+    }
+  }
+}
+function settleDomino(shot) {
+  const e = shot.skier;
+  if (!e) return;
+  e.x = shot.x; e.y = shot.y; e.life = 0;
+  e.hit = true; e.airTime = 0; e.dominoLaunched = false;
+  // The skier may have left its original terrain chunk while tumbling.
+  delete e.chunk;
+  if (!entities.includes(e)) entities.push(e);
+  shot.skier = null;
+}
+function downPatrol(e) {
+  if (e.hit) return;
+  e.hit = true; e.fallen = true; e.speed = 0; e.latched = false; e.life = 0;
+  score += 200; health = Math.min(100, health + 5 * rank('repair'));
+  burst(e.x, e.y, '#e9b645'); toast('PATROL DOWN! +200');
+}
+function rescue() {
+  if (rescueCharges <= 0) return false;
+  rescueCharges--; health = Math.max(30, health); invincible = 3;
+  for (const e of entities) if (e.type === 'patrol' && !e.hit) { e.latched = false; e.y = board.y - 150; }
+  board.speed = Math.max(board.speed, 500); board.edge = 0; board.traverse = 0;
+  jumpKind = 'ramp'; airDuration = 1.5; airTime = airDuration; extraHops = 0; flightHits = 0;
+  burst(board.x, board.y, '#00cddd'); toast('SECOND WIND!'); return true;
+}
+function helicopterUpgrades(wreck) {
+  if (rank('debris')) for (let i = -2 - rank('debris'); i <= 2 + rank('debris'); i++) launchShot('debris', wreck.x, wreck.y, i * 90);
+  if (rank('encore')) {
+    const y = board.y + board.speed * (airTime + .6) + 140;
+    spawn('jump', board.x, y);
+    jumpLanes.set(`encore:${elapsed}`, { x: board.x, start: world + y - board.y - 28, end: world + y - board.y + MAX_SPEED * 1.9 + 210 });
+  }
+}
+function updateUpgradeEffects(dt, downhillSpeed, steering, brake) {
+  if (airTime === 0) bombRain = false;
+  if (bombRain && rank('rain')) {
+    bombTimer -= dt;
+    if (bombTimer <= 0 && bombs.length < 60) {
+      bombs.push({x: board.x, y: board.y, blast: .35, fresh: true});
+      bombTimer = Math.max(.08, .32 / rank('rain'));
+    }
+  }
+  for (const bomb of bombs) {
+    if (!bomb.fresh) {
+      bomb.y -= downhillSpeed * dt;
+      bomb.blast = Math.max(0, bomb.blast - dt);
+      continue;
+    }
+    bomb.fresh = false;
+    burst(bomb.x, bomb.y, '#ff9100'); burst(bomb.x, bomb.y, '#ffe379');
+    for (const e of entities) {
+      if (e.hit || e.airTime > 0 || e.dropTime > 0 || Math.hypot(e.x - bomb.x, e.y - bomb.y) > 75) continue;
+      if (e.type === 'patrol') downPatrol(e);
+      else if (e.type === 'skier') {
+        e.hit = true; e.airTime = 0;
+        awardScore(Math.round(100 * (1 + .5 * rank('glass'))), 'bomb');
+        skierUpgrades(e); burst(e.x, e.y, '#e9b645');
+      }
+    }
+  }
+  bombs = bombs.filter(b => b.blast > 0);
+  if (airTime === 0 && Math.abs(steering) > .5) {
+    if (rank('snowball')) snowCharge = Math.min(1, snowCharge + dt * .35);
+    edgeTimer -= dt;
+    if (rank('edges') && edgeTimer <= 0) {
+      hotTrails.push({x: board.x, y: board.y + 20, life: 1 + rank('edges')}); edgeTimer = .08;
+    }
+  }
+  if (rank('sling') && airTime === 0) {
+    if (brake > .5) slingCharge = Math.min(1, slingCharge + dt * .5);
+    else if (slingCharge > 0) {
+      board.speed = Math.min(MAX_SPEED, board.speed + slingCharge * 180 * rank('sling'));
+      slingCharge = 0; burst(board.x, board.y, '#00cddd');
+    }
+  }
+  for (const trail of hotTrails) {
+    trail.y -= downhillSpeed * dt; trail.life -= dt;
+    for (const e of entities) if (e.type === 'patrol' && !e.hit && !(e.dropTime > 0) && Math.hypot(e.x - trail.x, e.y - trail.y) < 24) downPatrol(e);
+  }
+  hotTrails = hotTrails.filter(t => t.life > 0 && t.y > -100).slice(-180);
+  for (const shot of [...shots]) {
+    const oldX = shot.x, oldY = shot.y;
+    shot.life -= dt; shot.x += shot.vx * dt; shot.y += (shot.speed - downhillSpeed) * dt;
+    if (shot.kind === 'snowball') shot.radius = Math.min(shot.maxRadius, shot.radius + dt * 12);
+    shot.angle += dt * (shot.kind === 'snowball' ? shot.speed / shot.radius : shot.kind === 'domino' ? 8 : 12);
+    // Swept segment avoids missing targets at high speed.
+    const dx = shot.x - oldX, dy = shot.y - oldY, length = dx * dx + dy * dy;
+    const targets = entities.filter(e => !e.hit && !(e.airTime > 0) && !(e.dropTime > 0) && ['skier', 'patrol', 'rock', 'tree', 'dryTree'].includes(e.type)).map(e => {
+      const t = length ? clamp(((e.x - oldX) * dx + (e.y - oldY) * dy) / length, 0, 1) : 0;
+      return {e, t, distance: Math.hypot(e.x - oldX - dx * t, e.y - oldY - dy * t)};
+    }).sort((a, b) => a.t - b.t);
+    for (const {e, t, distance} of targets) {
+      if (shot.life <= 0 || shot.hits <= 0) break;
+      if (e.hit || shot.victims.has(e) || distance > shot.radius + 16) continue;
+      shot.victims.add(e);
+      if (shot.kind === 'domino') { shot.x = oldX + dx * t; shot.y = oldY + dy * t; }
+      if (!['skier', 'patrol'].includes(e.type)) { shot.life = 0; burst(shot.x, shot.y, '#aaa'); break; }
+      if (e.type === 'patrol') downPatrol(e);
+      else {
+        e.hit = true; e.airTime = 0;
+        awardScore(Math.round(100 * (1 + .5 * rank('glass'))), shot.kind);
+        skierUpgrades(e); burst(e.x, e.y, '#e9b645');
+      }
+      shot.hits--;
+    }
+  }
+  shots = shots.filter(s => {
+    const active = s.life > 0 && s.hits > 0 && s.y < height + 400 && s.y > -400;
+    if (!active && s.kind === 'domino') settleDomino(s);
+    return active;
+  });
+  if (rank('shave') && airTime === 0) for (const e of entities) {
+    if (!['rock', 'tree', 'dryTree'].includes(e.type) || e.shaveDone) continue;
+    if (touchesObstacle(e, board.x, board.y)) e.shaveBlocked = true;
+    const radius = e.type === 'tree' ? TREE_SHAPES[e.treeShape].halfWidth * 2 + 5 : 21;
+    if (e.y < board.y - radius - 8 && e.y > board.y - radius - 40) {
+      e.shaveDone = true;
+      if (!e.shaveBlocked && Math.abs(e.x - board.x) > radius && Math.abs(e.x - board.x) < radius + 22) {
+        awardScore(100 * rank('shave'), 'near-miss'); toast('CLOSE SHAVE!');
+      }
+    }
+  }
+}
+function drawUpgradeEffects() {
+  for (const b of bombs) {
+    ctx.save();
+    if (b.blast > 0) {
+      ctx.globalAlpha = b.blast / .35;
+      ctx.strokeStyle = '#ff9100'; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.arc(b.x, b.y, 12 + 63 * (1 - b.blast / .35), 0, Math.PI * 2); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  for (const t of hotTrails) { ctx.fillStyle = '#ff863b'; ctx.fillRect(t.x - 8, t.y, 3, 12); ctx.fillRect(t.x + 5, t.y, 3, 12); }
+  for (const s of shots) {
+    ctx.save(); ctx.translate(s.x, s.y);
+    if (s.kind === 'snowball') {
+      const r = s.radius;
+      ctx.fillStyle = '#dceff3'; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#7fabb5'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.save(); ctx.rotate(s.angle);
+      // Uneven snow seams and packed flecks visibly turn with the rolling ball.
+      ctx.strokeStyle = '#9bbfc9'; ctx.lineWidth = Math.max(2, r * .1);
+      ctx.beginPath(); ctx.arc(-r * .15, 0, r * .65, -.9, 1.8); ctx.stroke();
+      ctx.beginPath(); ctx.arc(r * .2, -r * .1, r * .35, 2.2, 4.7); ctx.stroke();
+      ctx.fillStyle = '#fff'; ctx.fillRect(-r * .6, -r * .4, r * .22, r * .18);
+      ctx.fillStyle = '#91b6c1'; ctx.fillRect(r * .2, r * .5, r * .2, r * .15);
+      ctx.restore();
+    }
+    else if (s.kind === 'skis') {
+      ctx.fillStyle = '#111'; ctx.fillRect(-9, -19, 8, 38); ctx.fillRect(1, -19, 8, 38);
+      ctx.fillStyle = '#e6df00'; ctx.fillRect(-7, -17, 4, 34); ctx.fillRect(3, -17, 4, 34);
+    }
+    else if (s.kind === 'domino') {
+      ctx.rotate(s.angle);
+      sprite(s.pose ? s.pose.name : 'skierStraight', 0, 0, 0, false, s.pose ? s.pose.mirrored : false);
+    } else if (s.kind === 'debris') {
+      ctx.rotate(s.angle);
+      if (s.part === 0) {
+        // Broken main rotor: long metal blades, yellow tips, central hub.
+        pixel(-29, -3, '#333', 58, 6); pixel(-3, -19, '#555', 6, 38);
+        pixel(-29, -3, '#e6df00', 6, 6); pixel(23, -3, '#e6df00', 6, 6);
+        pixel(-5, -5, '#aaa', 10, 10); pixel(-2, -2, '#333', 4, 4);
+      } else if (s.part === 1) {
+        // Tail boom with its red fin and small tail rotor.
+        pixel(-22, -3, '#b52b26', 40, 7); pixel(10, -15, '#b52b26', 8, 26);
+        pixel(-18, -13, '#333', 4, 26); pixel(-27, -2, '#555', 22, 4);
+        pixel(-19, -4, '#aaa', 6, 6);
+      } else {
+        // Torn cockpit panel: red shell, blue window and landing skid.
+        pixel(-15, -10, '#b52b26', 30, 20); pixel(0, -8, '#8bd3e6', 13, 12);
+        pixel(-9, -6, '#fff', 5, 12); pixel(-12, 10, '#333', 4, 7);
+        pixel(8, 10, '#333', 4, 7); pixel(-17, 17, '#555', 35, 3);
+      }
+    }
+    ctx.restore();
+  }
+  if (rank('snowball')) { ctx.fillStyle = '#7fabb5'; ctx.fillRect(board.x - 12, board.y + 28, 24 * snowCharge, 3); }
+}
+
+</script>
 <script>
 /* Original canvas artwork; dependency-free browser prototype. */
 'use strict';
@@ -192,8 +518,17 @@ const displayedSpeedKmh = () => speedKmh() / 3;
 const speedMultiplier = () => Math.round(clamp(board.speed / 240, 1, 2.5) * 10) / 10;
 const jumpHeight = () => airTime > 0 ? Math.sin(Math.PI * (1 - airTime / airDuration)) * (jumpKind === 'hop' ? .35 : 1) : 0;
 function hop() {
-  if (mode !== 'playing' || airTime > 0 || hopCooldown > 0) return;
-  jumpKind = 'hop'; airDuration = .45; airTime = airDuration; hopCooldown = .75;
+  if (mode !== 'playing') return;
+  if (airTime > 0) {
+    if (extraHops >= rank('bunny')) return;
+    extraHops++; airTime = airDuration;
+  } else {
+    if (hopCooldown > 0) return;
+    extraHops = 0; flightHits = 0;
+    jumpKind = 'hop'; airDuration = .45; airTime = airDuration; hopCooldown = .75;
+  }
+  if (rank('rain') && bombs.length < 60) bombs.push({x: board.x, y: board.y, blast: .35, fresh: true});
+  if (rank('snowball') && snowCharge >= 1) { launchShot('snowball', board.x, board.y + 25); snowCharge = 0; }
   // Small hops carry the existing lateral momentum through the entire flight.
   burst(board.x, board.y, '#ccc');
 }
@@ -208,6 +543,7 @@ function resize() {
   board.y = height * CAMERA_BOARD_Y;
   // Resizing moves the camera, never the board's position on the mountain.
   for (const item of [...entities, ...trails, ...particles]) item.y += board.y - oldBoardY;
+  for (const item of [...shots, ...hotTrails, ...bombs]) item.y += board.y - oldBoardY;
   if (mode === 'playing' || mode === 'paused') ensureTerrain();
 }
 new ResizeObserver(resize).observe(canvas);
@@ -220,7 +556,7 @@ function awardScore(base, type) {
   }
   chainTotal += base;
   score += base;
-  chainLastType = type; chainTime = CHAIN_WINDOW;
+  chainLastType = type; chainTime = CHAIN_WINDOW + rank('memory');
   return chainTotal;
 }
 function bankChain() {
@@ -242,7 +578,7 @@ function updateWanted() {
   const level = Math.min(5, milestone);
   if (level <= heat) return;
   heat = level; escapeStars = Math.max(escapeStars, level); escapeTime = 0;
-  patrolPending = true; patrolTimer = 4;
+  patrolPending = true; patrolTimer = 4 / (1 + .5 * rank('enemy'));
   toast(`WANTED LEVEL ${level}!`);
 }
 function deployPatrol(level) {
@@ -283,6 +619,7 @@ function updateHUD() {
   ui.wanted.setAttribute('aria-label', `Wanted level ${n} of 5`);
 }
 function start() {
+  resetUpgrades();
   score = 0; health = 100; heat = 0; escapeStars = 0; escapeTime = 0;
   elapsed = 0; world = 0; patrolTimer = 0; yetiTimer = 24; invincible = 0;
   terrainChunks = new Set(); terrainSeed = Math.floor(Math.random() * 0x7fffffff);
@@ -310,6 +647,7 @@ function togglePause() {
   toast(mode === 'paused' ? 'PAUSED — press P or Resume' : 'BACK ON THE SLOPE');
 }
 function end(reason = 'crash') {
+  if (rescue()) return;
   bankChain(); ui.scoreReadout.hidden = true;
   mode = 'over'; best = Math.max(best, Math.floor(score));
   try { localStorage.setItem('snowfree-best', String(best)); } catch {}
@@ -409,7 +747,7 @@ function ensureTerrain() {
 function damage(amount, text, speedRetention = .55) {
   if (invincible > 0) return;
   breakMultiplier();
-  health -= amount; invincible = 1.3; board.speed *= speedRetention; burst(board.x, board.y, '#e6653d'); toast(text);
+  health -= amount * (1 + .5 * rank('glass')); invincible = 1.3; board.speed *= speedRetention; burst(board.x, board.y, '#e6653d'); toast(text);
 }
 function touchesObstacle(e, x, y) {
   const radius = e.type === 'yeti' ? 29 : e.type === 'tree' ? TREE_SHAPES[e.treeShape].halfWidth * 2 + 5 : 21;
@@ -418,6 +756,7 @@ function touchesObstacle(e, x, y) {
     : Math.abs(e.x - x) < radius && Math.abs(e.y - y) < radius + 8;
 }
 function update(dt) {
+  if (mode !== 'playing') return;
   const movementDt = dt * MOTION_SCALE;
   elapsed += dt; invincible = Math.max(0, invincible - dt); toastTimer = Math.max(0, toastTimer - dt);
   multiplierFlashTime = Math.max(0, multiplierFlashTime - dt);
@@ -489,7 +828,7 @@ function update(dt) {
     while (helicopter.dropTimer <= 0) {
       const e = spawn('patrol', helicopter.x, helicopter.y);
       e.aggressive = true; e.dropTime = .9; e.dropSpeed = downhillSpeed;
-      helicopter.dropTimer += 3;
+      helicopter.dropTimer += 3 / (1 + .5 * rank('enemy'));
     }
   } else if (heat === 5 && helicopterRespawnAt !== null && score >= helicopterRespawnAt) {
     // Air support returns on a score cadence once the previous craft is down.
@@ -604,10 +943,7 @@ function update(dt) {
     for (const hazard of hazards) {
       if (!touchesObstacle(hazard, patrol.x, patrol.y)) continue;
       if (hazard.type === 'snow') { roughSnow = true; continue; }
-      patrol.hit = true; patrol.fallen = true; patrol.speed = 0;
-      patrol.latched = false; patrol.life = 0;
-      score += 200;
-      toast('PATROL DOWN! +200');
+      downPatrol(patrol);
       patrol.facing = Math.sign(patrol.vx) || 1;
       burst(patrol.x, patrol.y, '#e9b645');
       if (hazard.type === 'dryTree' && !hazard.burning) {
@@ -641,6 +977,8 @@ function update(dt) {
     if (ramp) {
       ramp.usedJump = true;
       jumpKind = 'ramp';
+      extraHops = 0; flightHits = 0;
+      bombRain = rank('rain') > 0; bombTimer = 0;
       board.speed = Math.min(MAX_SPEED, board.speed + 20 / 3.6 * PHYSICS_UNITS_PER_METER * 3);
       airDuration = 1.1 + board.speed / MAX_SPEED * .8; airTime = airDuration;
       board.vx = 0;
@@ -657,7 +995,8 @@ function update(dt) {
     helicopter = null;
     burst(wreck.x, wreck.y - 60, '#ff9100');
     helicopterRespawnAt = score + HELICOPTER_RESPAWN_SCORE;
-    awardScore(1000, 'helicopter');
+    awardScore(1000 + Math.max(0, rank('encore') - 1) * 250, 'helicopter');
+    helicopterUpgrades(wreck);
     toast('HELICOPTER DOWN! +1000');
     closePatrol = entities.some(e => e.type === 'patrol' && !e.hit && Math.hypot(e.x - board.x, e.y - board.y) < 270);
   }
@@ -677,7 +1016,9 @@ function update(dt) {
       if (e.type === 'skier') {
         const softLanding = wasAirborne && !boardFlying;
         const horizontalHit = !boardFlying && board.traverse > .95 && Math.abs(board.vx) > 20;
-        const basePoints = 100 + (softLanding ? 500 : 0) + (horizontalHit ? 50 : 0);
+        const groupBonus = boardFlying && flightHits > 0 ? 250 * rank('crowd') : 0;
+        const basePoints = Math.round(100 * (1 + .5 * rank('glass'))) + (softLanding ? 500 : 0) + (horizontalHit ? 50 : 0) + groupBonus;
+        if (boardFlying) flightHits++;
         const scoreType = softLanding && horizontalHit ? 'combo' : softLanding ? 'landing' : horizontalHit ? 'fault' : 'hit';
         awardScore(basePoints, scoreType);
         const awards = [];
@@ -685,12 +1026,18 @@ function update(dt) {
         if (horizontalHit) awards.push('Skier fault');
         const hitMessage = awards.length ? awards.join(' · ') : boardFlying && !lowHop ? 'MID-AIR HIT!' : 'SKIER DOWN!';
         e.hit = true; e.airTime = 0; escapeTime = 0;
+        skierUpgrades(e);
         burst(e.x, e.y, '#e9b645'); toast(hitMessage);
       } else if (e.type === 'snow') {
+        if (rank('powder')) {
+          if (!e.entered) { board.speed = Math.min(MAX_SPEED, board.speed + 100 * rank('powder')); e.entered = true; toast('POWDER SURFER!'); }
+          continue;
+        }
         // Small initial speed loss, then gentle friction over the visible bumps.
         if (!e.entered) { board.speed *= .8; e.entered = true; toast('ROUGH SNOW!'); }
         board.speed = Math.max(Math.min(board.speed, 50), board.speed - 210 * dt);
       } else if (e.type === 'patrol') {
+        if (invincible > 1.3) continue;
         const firstContact = !e.latched;
         if (firstContact) {
           e.latched = true; e.latchSide = Math.sign(e.x - board.x) || 1;
@@ -720,17 +1067,19 @@ function update(dt) {
     pursuitScoreTime += dt;
     while (pursuitScoreTime >= 1) {
       pursuitScoreTime -= 1;
-      score += PURSUIT_POINTS_PER_SECOND[wanted];
+      score += Math.round(PURSUIT_POINTS_PER_SECOND[wanted] * (1 + .5 * rank('enemy')));
     }
   } else pursuitScoreTime = 0;
   if (wanted > 0 && wanted < 5 && !patrolPending && !helicopter && !entities.some(e => e.type === 'patrol' && !e.hit)) {
     heat = 0; escapeTime = 0; escapeStars = 0; helicopterRespawnAt = null;
     toast('PATROL TAKEN DOWN!');
   }
+  updateUpgradeEffects(movementDt, downhillSpeed, steering, brake);
   entities = entities.filter(e => e.chunk || (e.type === 'patrol' && !e.hit) || (e.y > -450 && e.y < height + 450 && Math.abs(e.x - board.x) < width + 500 && e.life < 40));
   ensureTerrain();
   for (const p of particles) { p.life -= dt; p.x += p.vx * movementDt; p.y += (p.vy - downhillSpeed) * movementDt; }
   particles = particles.filter(p => p.life > 0); updateHUD(); if (health <= 0) end();
+  offerUpgrade();
 }
 // Hand-authored sprites on a two-pixel grid, with no smoothing or external assets.
 const palette = { K:'#111', G:'#008000', L:'#00bd00', Y:'#e6df00', W:'#fff', S:'#aaa', D:'#666', B:'#0000df', R:'#ed1515', P:'#a000df', F:'#ffc58a', C:'#00cddd', H:'#890b13', V:'#6200a0', O:'#817500' };
@@ -908,6 +1257,8 @@ const sprites = {
   rock:['.....KKKK....','...KKSSSSK...','..KSSWSDSSK..','.KSWSSSSDSK..','.KSSDSWSSSSK.','KSSSSSDSSDSK.','KSDSSSSSSSSSK','KKKKKKKKKKKKK'],
   yeti:['....KK...KK....','...KWWKKKWWK...','...KWWWWWWWK...','....KWRWRWK....','....KWKKKWK....','...KWWWWWWWK...','..KWWWWWWWWWK..','.KWWKWWWWWKWWK.','KWWKWWWWWWWKWWK','KWKKWWWWWWWKKWK','KK.KWWWWWWWK.KK','...KWWWKWWWK...','...KWWK.KWWK...','..KWWWK.KWWWK..','..KKKK...KKKK..']
 };
+// Keep the hat and poles, but remove both scattered skis after Loose Cannons.
+sprites.fallenNoSkis = sprites.fallen.map((row, i) => i >= 4 && i <= 11 ? '.'.repeat(row.length) : row);
 function pixel(x, y, color, w = 2, h = 2) { ctx.fillStyle = color; ctx.fillRect(Math.round(x / 2) * 2, Math.round(y / 2) * 2, w, h); }
 function sprite(name, x, y, lean = 0, fallen = false, mirrored = false) {
   const rows = sprites[name];
@@ -949,6 +1300,7 @@ function drawTreeFire(e) {
   ctx.globalAlpha = 1;
 }
 function drawEntity(e) {
+  if (e.dominoLaunched) return;
   const { x, y, type } = e;
   if (type === 'helicopterWreck') {
     if (e.crashTime > 0) {
@@ -971,7 +1323,7 @@ function drawEntity(e) {
     return;
   }
   if ((type === 'skier' && e.hit) || (type === 'patrol' && e.fallen)) {
-    sprite('fallen', x, y, 0, false, e.facing > 0);
+    sprite(e.skisReleased ? 'fallenNoSkis' : 'fallen', x, y, 0, false, e.facing > 0);
     // Little snow puffs leave the skier buried between the scattered equipment.
     for (let i = 0; i < 16; i++) {
       const px = x + ((i * 17) % 35) - 17, py = y - 32 + ((i * 11) % 30);
@@ -1053,6 +1405,7 @@ function draw() {
   ctx.save(); ctx.translate(width / 2 - board.x, 0);
   for (let i = 0; i < trails.length; i += 3) pixel(trails[i].x, trails[i].y, '#eee');
   entityDrawOrder().forEach(drawEntity);
+  drawUpgradeEffects();
   const altitude = jumpHeight();
   if (airTime > 0) {
     ctx.globalAlpha = .3 - altitude * .12;
