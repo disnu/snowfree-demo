@@ -203,7 +203,7 @@ const upgradeCatalog = [
   ['memory', 'Long Memory', 'SCORING', '...', 'Add one second per rank to the Vengeance chain window.'],
   ['crowd', 'Crowd Pleaser', 'STUNT', '+++', 'Each skier after the first hit during one flight adds a 250-point group bonus per rank.']
 ];
-let upgrades = {}, nextUpgradeScore = 10000, upgradeOffers = [], upgradeSelectionTimer;
+let upgrades = {}, nextUpgradeScore = 5000, upgradeOffers = [], upgradeSelectionTimer;
 let shots = [], hotTrails = [], snowCharge = 0, slingCharge = 0, extraHops = 0, flightHits = 0, rescueCharges = 0, edgeTimer = 0;
 let bombs = [], bombRain = false, bombTimer = 0;
 const rank = id => upgrades[id] || 0;
@@ -211,7 +211,7 @@ const upgradeOverlay = document.getElementById('upgradeOverlay');
 const upgradeCards = document.getElementById('upgradeCards');
 function resetUpgrades() {
   clearTimeout(upgradeSelectionTimer);
-  upgrades = {}; nextUpgradeScore = 10000; upgradeOffers = [];
+  upgrades = {}; nextUpgradeScore = 5000; upgradeOffers = [];
   shots = []; hotTrails = []; snowCharge = 0; slingCharge = 0;
   bombs = []; bombRain = false; bombTimer = 0;
   extraHops = 0; flightHits = 0; rescueCharges = 0; edgeTimer = 0;
@@ -227,7 +227,7 @@ function offerUpgrade() {
   }
   upgradeOffers = upgradeOffers.slice(0, 3);
   document.getElementById('upgradeMilestone').textContent = `${nextUpgradeScore.toLocaleString()} POINTS · UPGRADE EARNED`;
-  nextUpgradeScore += 10000;
+  nextUpgradeScore = Math.floor(nextUpgradeScore * 1.5);
   upgradeCards.replaceChildren();
   upgradeOffers.forEach(([id, name, category, icon, description], i) => {
     const card = document.createElement('button');
