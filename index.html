@@ -100,6 +100,10 @@ h1 { color: #293c60; font-size: clamp(19px, 2.8vw, 34px); line-height: 1.6; marg
 p { font-size: 9px; line-height: 2.3; color: #7b8799; max-width: 640px; margin: 0 0 18px; }
 #start { background: #e6eb89; color: #24334a; border-color: #24334a; padding: 15px 22px; font-size: 11px; margin: 10px 0 22px; }
 #overlay small { font-size: 7px; line-height: 2.6; color: #8190a0; }
+.mode-picker { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin: 12px 0; }
+.mode-picker button[aria-pressed="true"] { color: #172442; background: #e8ee74; border-color: #172442; }
+.mode-picker button:disabled { cursor: not-allowed; opacity: .5; }
+#overlay #modeHint { max-width: 540px; color: #52617b; margin-bottom: 16px; }
 footer { height: 33px; display: flex; align-items: center; justify-content: space-between; gap: 15px; color: #8d9bb3; font-size: 6px; line-height: 1.8; padding: 0 7px; }
 [hidden] { display: none !important; }
 @media (max-width: 700px) {
@@ -175,7 +179,11 @@ footer { height: 33px; display: flex; align-items: center; justify-content: spac
       <div class="eyebrow">NO RIDER. NO RULES.</div>
       <h1>A loose board.<br>A mountain of trouble.</h1>
       <p>Flatten skiers. Dodge rocks and rough snow. Lose the patrol.<br>And whatever you do, keep away from the yeti.</p>
-      <button id="start">LET IT SLIDE ↘</button>
+      <div class="mode-picker" role="group" aria-label="Game mode">
+        <button id="normalMode" type="button" aria-pressed="true">NORMAL</button>
+        <button id="powerMode" type="button" aria-pressed="false" aria-describedby="modeHint" disabled>POWER · LOCKED</button>
+      </div>
+      <small id="modeHint" role="status">Normal: no powers. Knock down a helicopter to unlock Power.</small>
       <small>Straight downhill builds speed. Gentle turns keep momentum.<br>← → / A D steer · ↑ / W tuck · ↓ / S brake · P pause<br>Brake + left/right: slide sideways and slow down.<br>Space / left-click / tap: small hop.<br>Touch: drag to steer, hold higher to go faster.</small>
     </div>
     <div class="slope-label">BLACK PINE RESORT <span>↘ UNAUTHORIZED DESCENT</span></div>
@@ -206,7 +214,7 @@ const upgradeCatalog = [
 let upgrades = {}, nextUpgradeScore = 5000, upgradeOffers = [], upgradeSelectionTimer;
 let shots = [], hotTrails = [], snowCharge = 0, slingCharge = 0, extraHops = 0, flightHits = 0, rescueCharges = 0, edgeTimer = 0;
 let bombs = [], bombRain = false, bombTimer = 0;
-const rank = id => upgrades[id] || 0;
+const rank = id => runMode === 'power' ? upgrades[id] || 0 : 0;
 const upgradeOverlay = document.getElementById('upgradeOverlay');
 const upgradeCards = document.getElementById('upgradeCards');
 function resetUpgrades() {
@@ -218,7 +226,7 @@ function resetUpgrades() {
   upgradeOverlay.hidden = true;
 }
 function offerUpgrade() {
-  if (mode !== 'playing' || score < nextUpgradeScore) return;
+  if (runMode !== 'power' || mode !== 'playing' || score < nextUpgradeScore) return;
   mode = 'upgrading'; keys.clear(); touch = null;
   upgradeOffers = [...upgradeCatalog];
   for (let i = upgradeOffers.length - 1; i > 0; i--) {
@@ -473,10 +481,11 @@ function drawUpgradeEffects() {
 'use strict';
 const canvas = document.querySelector('#game');
 const ctx = canvas.getContext('2d');
-const ui = Object.fromEntries(['score', 'wanted', 'health', 'healthFill', 'patrolStatus', 'best', 'time', 'distance', 'speed', 'multiplier', 'trickScore', 'scoreReadout', 'scoreLabel', 'speedFill', 'overlay', 'start', 'pause', 'message'].map(id => [id, document.getElementById(id)]));
+const ui = Object.fromEntries(['score', 'wanted', 'health', 'healthFill', 'patrolStatus', 'best', 'time', 'distance', 'speed', 'multiplier', 'trickScore', 'scoreReadout', 'scoreLabel', 'speedFill', 'overlay', 'pause', 'message'].map(id => [id, document.getElementById(id)]));
 const keys = new Set();
 let width = 1000, height = 650, mode = 'ready', previous = 0, world = 0;
 let score = 0, health = 100, heat = 0, escapeStars = 0, escapeTime = 0;
+let selectedGameMode = 'normal', runMode = 'normal', powerUnlocked = false;
 let elapsed = 0, patrolTimer = 0, yetiTimer = 24, invincible = 0;
 let terrainChunks = new Set(), terrainSeed = 1;
 let jumpLanes = new Map();
@@ -502,6 +511,7 @@ const CHAIN_WINDOW = 2;
 let entities = [], particles = [], trails = [], toastTimer = 0, best = 0;
 let board = { x: 500, y: 200, vx: 0, speed: 240, edge: 0, traverse: 0, facing: 1, brakeAngle: 0 }, touch = null;
 try { best = Number(localStorage.getItem('snowfree-best')) || 0; } catch {}
+try { powerUnlocked = localStorage.getItem('snowfree-power-unlocked') === 'true'; } catch {}
 ui.best.textContent = best.toLocaleString();
 const rand = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -618,7 +628,32 @@ function updateHUD() {
   const n = stars(); ui.wanted.textContent = '★'.repeat(n) + '☆'.repeat(5 - n);
   ui.wanted.setAttribute('aria-label', `Wanted level ${n} of 5`);
 }
+function updateModePicker() {
+  const powerButton = document.getElementById('powerMode');
+  powerButton.disabled = !powerUnlocked;
+  powerButton.textContent = powerUnlocked ? 'POWER' : 'POWER · LOCKED';
+  powerButton.setAttribute('aria-pressed', String(selectedGameMode === 'power'));
+  document.getElementById('normalMode').setAttribute('aria-pressed', String(selectedGameMode === 'normal'));
+  document.getElementById('modeHint').textContent = selectedGameMode === 'power'
+    ? 'Power: choose upgrades as your score grows.'
+    : powerUnlocked ? 'Normal: classic downhill survival, no powers. Power unlocked!'
+    : 'Normal: no powers. Knock down a helicopter to unlock Power.';
+}
+function selectGameMode(choice) {
+  if (mode !== 'ready' && mode !== 'over') return;
+  if (choice !== 'normal' && !(choice === 'power' && powerUnlocked)) return;
+  selectedGameMode = choice; updateModePicker();
+  start();
+}
+function unlockPowerMode() {
+  if (runMode !== 'normal' || powerUnlocked) return false;
+  powerUnlocked = true;
+  try { localStorage.setItem('snowfree-power-unlocked', 'true'); } catch {}
+  updateModePicker();
+  return true;
+}
 function start() {
+  runMode = selectedGameMode === 'power' && powerUnlocked ? 'power' : 'normal';
   resetUpgrades();
   score = 0; health = 100; heat = 0; escapeStars = 0; escapeTime = 0;
   elapsed = 0; world = 0; patrolTimer = 0; yetiTimer = 24; invincible = 0;
@@ -655,9 +690,12 @@ function end(reason = 'crash') {
   ui.overlay.querySelector('.eyebrow').textContent = 'END OF THE LINE';
   ui.overlay.querySelector('h1').textContent = reason === 'patrol' ? 'SKI PATROL GOT YOU' : 'That escalated downhill.';
   ui.overlay.querySelector('p').textContent = `${Math.floor(score).toLocaleString()} points · ${Math.floor(world / WORLD_PIXELS_PER_METER)} meters · personal best ${best.toLocaleString()}`;
-  ui.start.textContent = 'ONE MORE RUN ↘';
+  updateModePicker();
 }
-ui.start.addEventListener('click', start); ui.pause.addEventListener('click', togglePause);
+document.getElementById('normalMode').addEventListener('click', () => selectGameMode('normal'));
+document.getElementById('powerMode').addEventListener('click', () => selectGameMode('power'));
+updateModePicker();
+ui.pause.addEventListener('click', togglePause);
 window.addEventListener('keydown', e => {
   if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].includes(e.key)) e.preventDefault();
   keys.add(e.key.toLowerCase()); if (e.key.toLowerCase() === 'p' && !e.repeat) togglePause();
@@ -997,7 +1035,7 @@ function update(dt) {
     helicopterRespawnAt = score + HELICOPTER_RESPAWN_SCORE;
     awardScore(1000 + Math.max(0, rank('encore') - 1) * 250, 'helicopter');
     helicopterUpgrades(wreck);
-    toast('HELICOPTER DOWN! +1000');
+    toast(unlockPowerMode() ? 'HELICOPTER DOWN! +1000 · POWER UNLOCKED!' : 'HELICOPTER DOWN! +1000');
     closePatrol = entities.some(e => e.type === 'patrol' && !e.hit && Math.hypot(e.x - board.x, e.y - board.y) < 270);
   }
   for (const e of entities) {
