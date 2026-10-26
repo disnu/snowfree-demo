@@ -16,6 +16,35 @@
   --outline: -2px -2px 0 #14213a, 2px -2px 0 #14213a, -2px 2px 0 #14213a, 2px 2px 0 #14213a, 4px 4px 0 #14213a;
 }
 * { box-sizing: border-box; }
+.pause-layer[hidden], #viewPowers[hidden] { display: none; }
+.pause-layer { position: absolute; inset: 0; z-index: 25; display: grid; place-items: center; padding: 20px; background: #080f25ed; color: #e9efff; }
+.pause-panel { display: grid; gap: 16px; width: min(320px, 100%); text-align: center; }
+.pause-panel h2, .powers-panel h2 { font-size: 22px; line-height: 1.6; }
+.pause-panel button { min-height: 48px; }
+.powers-panel { width: min(680px, 100%); max-height: 100%; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
+.powers-panel h2 { margin: 0; }
+.powers-panel > p { font-size: 9px; line-height: 1.8; margin: 0; color: #a8b9d9; }
+#powersList { overflow-y: auto; min-height: 0; overscroll-behavior: contain; padding: 4px 8px 4px 4px; }
+.power-entry { border: 2px solid #485e83; padding: 16px; margin-bottom: 12px; background: #121d35; }
+.power-entry.owned { border-color: #e8ee74; }
+.power-entry h3 { margin: 0 0 12px; font-size: 13px; line-height: 1.7; }
+.power-entry small { font-size: 7px; line-height: 1.8; color: #90b6ed; }
+.power-entry.owned small { color: #e8ee74; }
+.power-entry p { font-size: 9px; line-height: 1.9; color: #c4d0e7; margin-bottom: 0; }
+#closePowers { flex-shrink: 0; min-height: 44px; }
+#closeSound { flex-shrink: 0; min-height: 44px; }
+#cheatForm { max-width: 460px; overflow-y: auto; }
+#cheatForm label { font-size: 10px; line-height: 1.8; }
+#cheatCode { width: 100%; min-height: 48px; padding: 12px; font: inherit; font-size: 16px; background: #121d35; color: #fff; border: 2px solid #7c98c9; }
+#cheatResult { color: #e8ee74; min-height: 36px; }
+#soundControls { overflow-y: auto; min-height: 0; overscroll-behavior: contain; padding: 4px; }
+.sound-control { padding: 14px; margin-bottom: 12px; border: 2px solid #485e83; background: #121d35; }
+.sound-control label { display: flex; align-items: center; gap: 12px; font-size: 9px; line-height: 1.8; }
+.sound-control input { accent-color: #e8ee74; }
+.sound-control input[type="checkbox"] { width: 22px; height: 22px; flex-shrink: 0; }
+.volume-control { margin-top: 10px; }
+.volume-control input { flex: 1; min-width: 0; height: 32px; }
+.volume-control output { min-width: 48px; text-align: right; color: #e8ee74; }
 #upgradeOverlay[hidden] { display: none; }
 #upgradeOverlay { position: absolute; inset: 0; z-index: 20; display: grid; place-items: center; overflow: auto; padding: 24px; background: #080f25ed; color: #e9efff; animation: upgrade-fade .25s ease-out; }
 .upgrade-panel { width: min(950px, 100%); text-align: center; margin: auto; }
@@ -175,6 +204,41 @@ footer { height: 33px; display: flex; align-items: center; justify-content: spac
         <small id="upgradeCollection">Choose with 1 / 2 / 3, or click a card.</small>
       </div>
     </section>
+    <section id="pauseMenu" class="pause-layer" role="dialog" aria-modal="true" aria-labelledby="pauseTitle" hidden>
+      <div class="pause-panel">
+        <h2 id="pauseTitle">PAUSED</h2>
+        <button id="resumeRun" type="button">RESUME</button>
+        <button id="viewPowers" type="button" hidden>POWERS</button>
+        <button id="viewSound" type="button">SOUND</button>
+        <button id="quitRun" type="button">QUIT</button>
+      </div>
+    </section>
+    <section id="powersPopup" class="pause-layer" role="dialog" aria-modal="true" aria-labelledby="powersTitle" hidden>
+      <div class="powers-panel">
+        <h2 id="powersTitle">POWERS</h2>
+        <p>All powers · Your collected ranks are highlighted.</p>
+        <div id="powersList" tabindex="0" aria-label="All powers"></div>
+        <button id="closePowers" type="button">BACK</button>
+      </div>
+    </section>
+    <section id="soundPopup" class="pause-layer" role="dialog" aria-modal="true" aria-labelledby="soundTitle" hidden>
+      <div class="powers-panel">
+        <h2 id="soundTitle">SOUND</h2>
+        <p>Music and sound effects · Set to 0% to mute. Settings save automatically.</p>
+        <div id="soundControls"></div>
+        <button id="closeSound" type="button">BACK</button>
+      </div>
+    </section>
+    <section id="cheatsPopup" class="pause-layer" role="dialog" aria-modal="true" aria-labelledby="cheatsTitle" hidden>
+      <form id="cheatForm" class="powers-panel">
+        <h2 id="cheatsTitle">CHEATS</h2>
+        <label for="cheatCode">Enter cheat code</label>
+        <input id="cheatCode" type="text" inputmode="numeric" autocomplete="off" maxlength="20">
+        <button type="submit">ACTIVATE</button>
+        <p id="cheatResult" role="status"></p>
+        <button id="closeCheats" type="button">BACK</button>
+      </form>
+    </section>
     <div id="overlay">
       <div class="eyebrow">NO RIDER. NO RULES.</div>
       <h1>A loose board.<br>A mountain of trouble.</h1>
@@ -184,6 +248,7 @@ footer { height: 33px; display: flex; align-items: center; justify-content: spac
         <button id="powerMode" type="button" aria-pressed="false" aria-describedby="modeHint" disabled>POWER · LOCKED</button>
       </div>
       <small id="modeHint" role="status">Normal: no powers. Knock down a helicopter to unlock Power.</small>
+      <button id="viewCheats" type="button">CHEATS</button>
       <small>Straight downhill builds speed. Gentle turns keep momentum.<br>← → / A D steer · ↑ / W tuck · ↓ / S brake · P pause<br>Brake + left/right: slide sideways and slow down.<br>Space / left-click / tap: small hop.<br>Touch: drag to steer, hold higher to go faster.</small>
     </div>
     <div class="slope-label">BLACK PINE RESORT <span>↘ UNAUTHORIZED DESCENT</span></div>
@@ -191,17 +256,311 @@ footer { height: 33px; display: flex; align-items: center; justify-content: spac
   <footer><span>100 / SKIER · 500 × STARS / ESCAPE · UP TO 2.5× WITH SPEED</span><span>SPACE / CLICK / TAP TO HOP</span></footer>
 </main>
 <script>
+/* Generated arcade sounds; no audio downloads required. */
+const gameAudio = (() => {
+  let context, master, snowGain, turnGain, hitGain, airGain, snowFilter, turnFilter, airFilter;
+  let musicGain, musicNoise, nextStep = 0, step = 0, energy = 0, bossMix = 0, bossTarget = 0, section = 0, previousMusicTime = 0, previousScore = 0, scoreRush = 0;
+  const musicVoices = new Set();
+  const settings = {music: {enabled: true, volume: 65}, sfx: {enabled: true, volume: 100}};
+  try {
+    const saved = JSON.parse(localStorage.getItem('snowfree-sound') || '{}');
+    if (!saved?.sfx && saved?.master) saved.sfx = saved.master;
+    for (const key of Object.keys(settings)) {
+      if (typeof saved?.[key]?.enabled === 'boolean') settings[key].enabled = saved[key].enabled;
+      if (Number.isFinite(saved?.[key]?.volume)) settings[key].volume = Math.max(0, Math.min(100, saved[key].volume));
+    }
+  } catch {}
+  // Old effect names retain their mix balance; all are controlled by SFX now.
+  const level = key => {
+    const channel = key === 'music' ? 'music' : key === 'sfx' || key === 'master' ? 'sfx' : null;
+    return channel ? settings[channel].enabled ? settings[channel].volume / 100 : 0 : 1;
+  };
+  function setSetting(key, field, value) {
+    if (!settings[key]) return;
+    if (field === 'enabled') settings[key].enabled = Boolean(value);
+    else if (field === 'volume' && Number.isFinite(Number(value))) {
+      settings[key].volume = Math.max(0, Math.min(100, Number(value)));
+      settings[key].enabled = true;
+    }
+    try { localStorage.setItem('snowfree-sound', JSON.stringify(settings)); } catch {}
+  }
+  function renderSettings() {
+    const list = document.getElementById('soundControls'); list.replaceChildren();
+    for (const [key, label] of [['music', 'MUSIC'], ['sfx', 'SFX']]) {
+      const row = document.createElement('div'); row.className = 'sound-control';
+      const toggleLabel = document.createElement('label');
+      toggleLabel.textContent = label;
+      toggleLabel.htmlFor = `volume-${key}`;
+      const volumeLabel = document.createElement('label'); volumeLabel.className = 'volume-control';
+      const slider = document.createElement('input'); slider.type = 'range'; slider.min = '0'; slider.max = '100'; slider.value = settings[key].enabled ? settings[key].volume : 0; slider.id = `volume-${key}`;
+      slider.setAttribute('aria-label', `${label} volume`);
+      const output = document.createElement('output'); output.textContent = `${slider.value}%`;
+      slider.addEventListener('input', () => { setSetting(key, 'volume', slider.value); output.textContent = `${slider.value}%`; });
+      volumeLabel.append(slider, output); row.append(toggleLabel, volumeLabel); list.append(row);
+    }
+  }
+  let lastOuch = -1;
+  function unlock() {
+    try {
+      if (!context) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        context = new AudioContext();
+        master = context.createGain(); master.gain.value = 0;
+        master.connect(context.destination);
+        musicGain = context.createGain(); musicGain.gain.value = 0; musicGain.connect(context.destination);
+        hitGain = context.createGain(); hitGain.gain.value = level('hits'); hitGain.connect(master);
+        const buffer = context.createBuffer(1, context.sampleRate * 2, context.sampleRate);
+        const data = buffer.getChannelData(0);
+        let value = 0;
+        for (let i = 0; i < data.length; i++) {
+          if (i % 6 === 0) value = Math.round((Math.random() * 2 - 1) * 7) / 7;
+          data[i] = value;
+        }
+        musicNoise = buffer;
+        function noise(frequency, type) {
+          const source = context.createBufferSource(); source.buffer = buffer; source.loop = true;
+          const filter = context.createBiquadFilter(); filter.type = type; filter.frequency.value = frequency;
+          const gain = context.createGain(); gain.gain.value = 0;
+          source.connect(filter); filter.connect(gain); gain.connect(master); source.start();
+          return {filter, gain};
+        }
+        const snow = noise(420, 'lowpass'), turn = noise(1300, 'bandpass');
+        snowGain = snow.gain; snowFilter = snow.filter;
+        turnGain = turn.gain; turnFilter = turn.filter; turnFilter.Q.value = .7;
+        const air = noise(1800, 'bandpass');
+        airGain = air.gain; airFilter = air.filter; airFilter.Q.value = .4;
+      }
+      if (context.state === 'suspended') context.resume().catch(() => {});
+    } catch { /* Audio is optional on unsupported browsers. */ }
+  }
+  function hush() {
+    if (!context || !master) return;
+    const now = context.currentTime;
+    master.gain.cancelScheduledValues(now);
+    master.gain.setTargetAtTime(0, now, .015);
+    musicGain.gain.setTargetAtTime(0, now, .015);
+    for (const voice of musicVoices) { try { voice.stop(now + .02); } catch {} }
+    musicVoices.clear(); nextStep = 0; previousMusicTime = 0;
+  }
+  function resetMusic() {
+    hush(); step = 0; energy = 0; bossMix = 0; bossTarget = 0; section = 0;
+    previousScore = 0; scoreRush = 0;
+  }
+  function musicNote(midi, time, duration, volume, wave = 'triangle', endMidi = midi) {
+    const source = context.createOscillator(), gain = context.createGain();
+    source.type = wave;
+    source.frequency.setValueAtTime(440 * 2 ** ((midi - 69) / 12), time);
+    source.frequency.exponentialRampToValueAtTime(440 * 2 ** ((endMidi - 69) / 12), time + duration);
+    gain.gain.setValueAtTime(0, time); gain.gain.linearRampToValueAtTime(volume, time + .008);
+    gain.gain.exponentialRampToValueAtTime(.0001, time + duration);
+    source.connect(gain); gain.connect(musicGain); musicVoices.add(source);
+    source.onended = () => { musicVoices.delete(source); source.disconnect(); gain.disconnect(); };
+    source.start(time); source.stop(time + duration + .01);
+  }
+  function musicHat(time, strong) {
+    const source = context.createBufferSource(), filter = context.createBiquadFilter(), gain = context.createGain();
+    source.buffer = musicNoise; filter.type = 'highpass'; filter.frequency.value = strong ? 1800 : 4500;
+    const duration = strong ? .12 : .045;
+    gain.gain.setValueAtTime(strong ? .12 : .055, time);
+    gain.gain.exponentialRampToValueAtTime(.0001, time + duration);
+    source.connect(filter); filter.connect(gain); gain.connect(musicGain); musicVoices.add(source);
+    source.onended = () => { musicVoices.delete(source); source.disconnect(); filter.disconnect(); gain.disconnect(); };
+    source.start(time); source.stop(time + duration);
+  }
+  function musicSwell(time, volume) {
+    const source = context.createBufferSource(), filter = context.createBiquadFilter(), gain = context.createGain();
+    source.buffer = musicNoise; filter.type = 'bandpass'; filter.Q.value = 1.4;
+    filter.frequency.setValueAtTime(300, time);
+    filter.frequency.exponentialRampToValueAtTime(5200, time + .65);
+    gain.gain.setValueAtTime(.0001, time);
+    gain.gain.exponentialRampToValueAtTime(volume, time + .58);
+    gain.gain.exponentialRampToValueAtTime(.0001, time + .95);
+    source.connect(filter); filter.connect(gain); gain.connect(musicGain); musicVoices.add(source);
+    source.onended = () => { musicVoices.delete(source); source.disconnect(); filter.disconnect(); gain.disconnect(); };
+    source.start(time); source.stop(time + 1);
+  }
+  // Two original sections that share F major / D minor, so the switch lands
+  // naturally: a lilting pastoral waltz opens the run, then a harmonic-minor
+  // boss theme with driving bass, drums, and brass stabs takes over as the
+  // score climbs and patrol pressure builds.
+  const PASTORAL_CHORDS = [
+    [41, 53, 57, 60], // F
+    [38, 50, 53, 57], // Dm
+    [46, 53, 58, 62], // Bb
+    [48, 55, 60, 64]  // C
+  ];
+  const PASTORAL_MELODY = [
+    [[69, 3], null, null, null, [72, 2], null, [74, 2], null, null, null, [72, 3], null, null, null, [69, 2], null],
+    [null, null, [65, 3], null, null, null, [69, 2], null, null, [67, 2], null, null, [65, 4], null, null, null],
+    [[74, 3], null, null, null, [72, 2], null, [70, 2], null, null, null, [65, 3], null, null, null, [67, 2], null],
+    [null, null, [64, 3], null, null, null, [67, 2], null, null, [69, 2], null, null, [72, 4], null, null, null]
+  ];
+  const BOSS_CHORDS = [
+    [38, 50, 53, 57], // Dm
+    [46, 53, 58, 62], // Bb
+    [43, 50, 55, 58], // Gm
+    [45, 52, 57, 61]  // A (harmonic minor)
+  ];
+  const BOSS_MELODY = [
+    [[74, 1], null, [77, 1], null, [76, 1], null, [74, 2], null, null, null, [70, 1], null, [69, 1], null, [73, 2], null],
+    [[74, 1], null, [70, 1], null, [72, 1], null, [74, 2], null, null, null, [77, 1], null, [74, 1], null, [70, 2], null],
+    [[74, 1], null, [79, 2], null, [77, 1], null, [74, 2], null, null, null, [70, 1], null, [67, 1], null, [70, 2], null],
+    [[73, 2], null, [76, 2], null, [74, 1], null, [73, 1], null, [69, 2], null, null, [73, 1], [74, 1], null, [76, 2], null]
+  ];
+  function updateMusic(playing, points, pursuit) {
+    const now = context.currentTime;
+    musicGain.gain.setTargetAtTime(playing ? .28 * level('music') : 0, now, .05);
+    if (!playing || context.state !== 'running') {
+      if (nextStep) hush();
+      return;
+    }
+    const dt = previousMusicTime ? Math.min(.1, now - previousMusicTime) : 0;
+    previousMusicTime = now;
+    scoreRush = Math.min(.25, Math.max(0, scoreRush - dt * .06) + Math.max(0, points - previousScore) / 15000);
+    previousScore = points;
+    const target = Math.min(1, Math.log2(1 + points / 10000) * .12 + pursuit * .65 + scoreRush);
+    energy += (target - energy) * Math.min(1, dt * 1.5);
+    // Hysteresis keeps the theme from flickering at the boundary.
+    if (energy > .45) bossTarget = 1;
+    else if (energy < .34) bossTarget = 0;
+    bossMix += (bossTarget - bossMix) * Math.min(1, dt * 1.2);
+    if (nextStep < now) nextStep = now + .02;
+    while (nextStep < now + .12) {
+      // Changes wait for a beat and are announced with a noise swell.
+      if (step % 4 === 0 && section !== bossTarget) {
+        section = bossTarget;
+        step = 0;
+        musicSwell(nextStep, section ? .12 : .05);
+      }
+      const boss = section === 1;
+      const beat = step % 16, bar = Math.floor(step / 16) % 4;
+      const bpm = boss ? 132 + Math.max(0, energy - .45) * 70 : 76 + energy * 18;
+      const eighth = 60 / bpm / 2;
+      if (boss) {
+        const chord = BOSS_CHORDS[bar];
+        // Pulsing root/octave bass, timpani downbeats, snare backbeat, stabs.
+        musicNote(beat % 4 === 2 ? chord[0] + 12 : chord[0], nextStep, eighth * .8, .125, 'square');
+        if (beat === 0) musicNote(chord[0] - 12, nextStep, eighth * 3, .28, 'sine', chord[0] - 17);
+        if (energy > .72 && beat === 8) musicNote(chord[0] - 12, nextStep, eighth * 1.4, .18, 'sine', chord[0] - 16);
+        if (beat === 4 || beat === 12) musicHat(nextStep, true);
+        if (beat % 2 === 1) musicHat(nextStep, false);
+        if (beat % 4 === 2 || beat % 4 === 3 && energy > .68) {
+          for (const pitch of chord.slice(1)) musicNote(pitch + 12, nextStep, eighth * .45, .034, 'square');
+        }
+        const note = BOSS_MELODY[bar][beat];
+        if (note) {
+          musicNote(note[0], nextStep, eighth * note[1] * .95, .072, 'square');
+          if (energy > .82) musicNote(note[0] + 12, nextStep, eighth * note[1] * .7, .028, 'square');
+        }
+      } else {
+        const chord = PASTORAL_CHORDS[bar];
+        // Soft pad and bass on the downbeat, gentle arpeggio, lilting melody.
+        if (beat === 0) {
+          musicNote(chord[0], nextStep, eighth * 14, .15, 'triangle');
+          for (const pitch of chord.slice(1)) musicNote(pitch, nextStep, eighth * 14, .026, 'sine');
+        } else if (beat === 8) {
+          musicNote(chord[0] + 7, nextStep, eighth * 5, .06, 'triangle');
+        }
+        if (beat % 2 === 0) musicNote(chord[[1, 2, 3, 2][(beat / 2) % 4]], nextStep, eighth * 1.4, .026, 'sine');
+        const note = PASTORAL_MELODY[bar][beat];
+        if (note) musicNote(note[0], nextStep, eighth * note[1] * .9, .068, 'triangle');
+        if (energy > .12 && (beat === 4 || beat === 12)) musicHat(nextStep, false);
+      }
+      nextStep += eighth; step = (step + 1) % 64;
+    }
+  }
+  function update(playing, speed, carve, grounded, points = 0, pursuit = 0) {
+    if (!context || !snowGain || !turnGain || !airGain) return;
+    const now = context.currentTime;
+    master.gain.setTargetAtTime(playing ? .35 * level('master') : 0, now, .025);
+    hitGain.gain.setTargetAtTime(level('hits'), now, .025);
+    const moving = playing && grounded && speed > 1;
+    const intensity = Math.min(1, Math.max(0, speed / 833));
+    snowGain.gain.setTargetAtTime(moving ? (.14 + intensity * .14) * level('snow') : 0, now, .08);
+    snowFilter.frequency.setTargetAtTime(240 + intensity * 460, now, .1);
+    const edge = moving ? Math.min(1, Math.abs(carve) / 310) : 0;
+    turnGain.gain.setTargetAtTime(edge > .08 ? edge * .19 * level('turns') : 0, now, .045);
+    turnFilter.frequency.setTargetAtTime(650 + edge * 1900, now, .07);
+    airGain.gain.setTargetAtTime(playing && !grounded ? (.12 + intensity * .12) * level('air') : 0, now, .06);
+    airFilter.frequency.setTargetAtTime(1100 + intensity * 1500, now, .1);
+    updateMusic(playing, points, pursuit);
+  }
+  function ouch() {
+    if (!context || context.state !== 'running' || !master || !level('master') || !level('hits')) return;
+    const now = context.currentTime;
+    if (now - lastOuch < .08) return;
+    lastOuch = now;
+    // Two descending square-wave syllables make a cartoon "ow-ch" chirp.
+    const voice = context.createOscillator(), filter = context.createBiquadFilter(), gain = context.createGain();
+    voice.type = 'square'; voice.frequency.setValueAtTime(390, now);
+    voice.frequency.exponentialRampToValueAtTime(170, now + .09);
+    voice.frequency.setValueAtTime(250, now + .105);
+    voice.frequency.exponentialRampToValueAtTime(85, now + .23);
+    filter.type = 'lowpass'; filter.frequency.setValueAtTime(1700, now);
+    filter.frequency.exponentialRampToValueAtTime(450, now + .24);
+    gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(.25, now + .006);
+    gain.gain.linearRampToValueAtTime(.09, now + .095);
+    gain.gain.linearRampToValueAtTime(.18, now + .11);
+    gain.gain.exponentialRampToValueAtTime(.001, now + .25);
+    voice.connect(filter); filter.connect(gain); gain.connect(hitGain);
+    voice.onended = () => { voice.disconnect(); filter.disconnect(); gain.disconnect(); };
+    voice.start(now); voice.stop(now + .26);
+  }
+  function effect(kind) {
+    if (!context || context.state !== 'running' || !master || !level('master')) return;
+    const now = context.currentTime;
+    function note(frequency, endFrequency, delay, duration, volume, wave, cutoff) {
+      const oscillator = context.createOscillator(), filter = context.createBiquadFilter(), gain = context.createGain();
+      const time = now + delay;
+      oscillator.type = wave;
+      oscillator.frequency.setValueAtTime(frequency, time);
+      oscillator.frequency.exponentialRampToValueAtTime(endFrequency, time + duration);
+      filter.type = 'lowpass'; filter.frequency.value = cutoff;
+      gain.gain.setValueAtTime(0, time);
+      gain.gain.linearRampToValueAtTime(volume * level(kind), time + .004);
+      gain.gain.exponentialRampToValueAtTime(.0001, time + duration);
+      oscillator.connect(filter); filter.connect(gain); gain.connect(master);
+      oscillator.onended = () => { oscillator.disconnect(); filter.disconnect(); gain.disconnect(); };
+      oscillator.start(time); oscillator.stop(time + duration + .01);
+    }
+    if (kind === 'hop') {
+      note(180, 620, 0, .12, .23, 'square', 2000);
+      note(110, 250, 0, .08, .18, 'triangle', 900);
+    } else if (kind === 'landing') {
+      note(150, 42, 0, .18, .55, 'triangle', 1100);
+      note(480, 95, 0, .065, .16, 'square', 1300);
+    } else if (kind === 'wood') {
+      // Hollow body and a short, woody attack.
+      note(210, 65, 0, .19, .65, 'triangle', 1300);
+      note(740, 280, 0, .055, .16, 'square', 2000);
+    } else if (kind === 'rock') {
+      // Heavy low impact beneath a sharp, metallic stone click.
+      note(120, 38, 0, .15, .32, 'square', 700);
+      note(1900, 630, 0, .065, .2, 'square', 3200);
+      note(920, 370, .025, .075, .1, 'triangle', 2200);
+    } else if (kind === 'rainbow') {
+      [523.25, 659.25, 783.99, 1046.5, 1318.51].forEach((pitch, i) => {
+        note(pitch, pitch * 1.025, i * .055, .17, .16, 'square', 3500);
+      });
+      note(261.63, 1046.5, 0, .3, .12, 'triangle', 2500);
+    }
+  }
+  return {unlock, update, ouch, hush, renderSettings, effect, resetMusic};
+})();
+
+</script>
+<script>
 /* Run-local upgrades. Simulation stays frozen while cards animate. */
 const upgradeCatalog = [
   ['rain', 'Rain From Above', 'STUNT', 'BOOM', 'Each normal or extra Bunny Board hop triggers one instant blast beneath you. Rainbow jumps rain explosions; more ranks speed up that rain. Blasts score skier and patrol hits.'],
   ['skis', 'Loose Cannons', 'CHAIN REACTION', 'II', 'Downed skiers release skis downhill, scoring hits on skiers and patrol. More ranks add piercing hits.'],
   ['domino', 'Domino Effect', 'CHAIN REACTION', '>>', 'Downed skiers tumble downhill into others. More ranks extend their reach.'],
-  ['snowball', 'Snowball Effect', 'CHAIN REACTION', 'O', 'Carving charges a rolling snowball. Hop to launch it downhill; it grows as it rolls. More ranks make bigger snowballs, with the same charge time.'],
+  ['snowball', 'Snowball Effect', 'CHAIN REACTION', 'O', 'Carve to charge; hop to launch. Rank 2: two balls. Rank 3: faster growth. Rank 4: three balls. Every rank after 4: faster growth and longer travel.'],
   ['debris', 'Explosive Exit', 'CHAIN REACTION', '*', 'Helicopter takedowns launch a fan of debris that downs patrol and skiers. More ranks add fragments.'],
   ['bunny', 'Bunny Board', 'MOVEMENT', '^^', 'Hop again while airborne. Each rank adds one extra hop per flight.'],
   ['powder', 'Powder Surfer', 'MOVEMENT', '~', 'Rough snow boosts speed instead of slowing you. More ranks strengthen the boost.'],
   ['sling', 'Slingshot', 'MOVEMENT', '=>', 'Ground braking stores energy. Release to boost downhill. More ranks increase the boost.'],
-  ['edges', 'Hot Edges', 'MOVEMENT', '//', 'Hard carving leaves glowing trails that trip pursuers. More ranks extend trail lifetime.'],
   ['shave', 'Close Shave', 'RISK / REWARD', '!', 'Skim past rocks and trees without hitting them for 100 points per rank, once per obstacle.'],
   ['enemy', 'Public Enemy', 'RISK / REWARD', '*****', 'Patrol arrival and helicopter drops are faster. Pursuit points increase by 50% per rank.'],
   ['glass', 'Glass Cannon', 'RISK / REWARD', 'X', 'Skier takedowns score 50% more per rank, but you take 50% more obstacle damage per rank.'],
@@ -212,7 +571,7 @@ const upgradeCatalog = [
   ['crowd', 'Crowd Pleaser', 'STUNT', '+++', 'Each skier after the first hit during one flight adds a 250-point group bonus per rank.']
 ];
 let upgrades = {}, nextUpgradeScore = 5000, upgradeOffers = [], upgradeSelectionTimer;
-let shots = [], hotTrails = [], snowCharge = 0, slingCharge = 0, extraHops = 0, flightHits = 0, rescueCharges = 0, edgeTimer = 0;
+let shots = [], snowCharge = 0, slingCharge = 0, extraHops = 0, flightHits = 0, rescueCharges = 0;
 let bombs = [], bombRain = false, bombTimer = 0;
 const rank = id => runMode === 'power' ? upgrades[id] || 0 : 0;
 const upgradeOverlay = document.getElementById('upgradeOverlay');
@@ -220,14 +579,15 @@ const upgradeCards = document.getElementById('upgradeCards');
 function resetUpgrades() {
   clearTimeout(upgradeSelectionTimer);
   upgrades = {}; nextUpgradeScore = 5000; upgradeOffers = [];
-  shots = []; hotTrails = []; snowCharge = 0; slingCharge = 0;
+  shots = []; snowCharge = 0; slingCharge = 0;
   bombs = []; bombRain = false; bombTimer = 0;
-  extraHops = 0; flightHits = 0; rescueCharges = 0; edgeTimer = 0;
+  extraHops = 0; flightHits = 0; rescueCharges = 0;
   upgradeOverlay.hidden = true;
 }
 function offerUpgrade() {
   if (runMode !== 'power' || mode !== 'playing' || score < nextUpgradeScore) return;
   mode = 'upgrading'; keys.clear(); touch = null;
+  gameAudio.hush();
   upgradeOffers = [...upgradeCatalog];
   for (let i = upgradeOffers.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -235,7 +595,7 @@ function offerUpgrade() {
   }
   upgradeOffers = upgradeOffers.slice(0, 3);
   document.getElementById('upgradeMilestone').textContent = `${nextUpgradeScore.toLocaleString()} POINTS · UPGRADE EARNED`;
-  nextUpgradeScore = Math.floor(nextUpgradeScore * 1.5);
+  nextUpgradeScore = Math.floor(nextUpgradeScore * 1.5 + 5000);
   upgradeCards.replaceChildren();
   upgradeOffers.forEach(([id, name, category, icon, description], i) => {
     const card = document.createElement('button');
@@ -260,10 +620,10 @@ function chooseUpgrade(index) {
   });
   upgradeSelectionTimer = setTimeout(() => {
     upgradeOverlay.hidden = true; keys.clear(); touch = null;
-    mode = document.hidden ? 'paused' : 'playing';
-    ui.pause.textContent = mode === 'paused' ? 'Resume · P' : 'Pause · P';
+    mode = 'playing';
+    ui.pause.textContent = 'Pause · P';
     toast(`${name.toUpperCase()}!`);
-    offerUpgrade();
+    if (document.hidden) togglePause(); else offerUpgrade();
   }, 650);
 }
 window.addEventListener('keydown', e => {
@@ -278,14 +638,15 @@ window.addEventListener('keydown', e => {
 function launchShot(kind, x, y, vx = 0) {
   if (shots.length >= 120) return;
   const snowRank = Math.max(1, rank('snowball'));
-  const shot = {kind, x, y, vx, speed: Math.max(600, board.speed + 240), life: kind === 'domino' ? .7 + rank('domino') * .3 : 2.5,
-    radius: kind === 'snowball' ? 10 + (snowRank - 1) * 4 : 10,
-    maxRadius: 32 + (snowRank - 1) * 6, angle: 0, part: shots.length % 3,
+  const shot = {kind, x, y, vx, speed: Math.max(600, board.speed + 240), life: kind === 'domino' ? .7 + rank('domino') * .3 : kind === 'snowball' ? 2.5 + Math.max(0, snowRank - 4) * .5 : 2.5,
+    radius: 10, growthRate: 12 + (snowRank >= 3 ? 6 : 0) + Math.max(0, snowRank - 4) * 3,
+    maxRadius: 32, angle: 0, part: shots.length % 3,
     hits: kind === 'skis' ? rank('skis') : kind === 'snowball' ? 6 : 1, victims: new Set()};
   shots.push(shot);
   return shot;
 }
 function skierUpgrades(e) {
+  gameAudio.ouch();
   if (rank('skis') && launchShot('skis', e.x, e.y)) e.skisReleased = true;
   if (rank('domino')) {
     const shot = launchShot('domino', e.x, e.y);
@@ -294,6 +655,13 @@ function skierUpgrades(e) {
       shot.skier = e;
       e.dominoLaunched = true;
     }
+  }
+}
+function launchSnowballs() {
+  const count = rank('snowball') >= 4 ? 3 : rank('snowball') >= 2 ? 2 : 1;
+  for (let i = 0; i < count; i++) {
+    const offset = i - (count - 1) / 2;
+    launchShot('snowball', board.x + offset * 28, board.y + 25, offset * 55);
   }
 }
 function settleDomino(shot) {
@@ -358,10 +726,6 @@ function updateUpgradeEffects(dt, downhillSpeed, steering, brake) {
   bombs = bombs.filter(b => b.blast > 0);
   if (airTime === 0 && Math.abs(steering) > .5) {
     if (rank('snowball')) snowCharge = Math.min(1, snowCharge + dt * .35);
-    edgeTimer -= dt;
-    if (rank('edges') && edgeTimer <= 0) {
-      hotTrails.push({x: board.x, y: board.y + 20, life: 1 + rank('edges')}); edgeTimer = .08;
-    }
   }
   if (rank('sling') && airTime === 0) {
     if (brake > .5) slingCharge = Math.min(1, slingCharge + dt * .5);
@@ -370,15 +734,10 @@ function updateUpgradeEffects(dt, downhillSpeed, steering, brake) {
       slingCharge = 0; burst(board.x, board.y, '#00cddd');
     }
   }
-  for (const trail of hotTrails) {
-    trail.y -= downhillSpeed * dt; trail.life -= dt;
-    for (const e of entities) if (e.type === 'patrol' && !e.hit && !(e.dropTime > 0) && Math.hypot(e.x - trail.x, e.y - trail.y) < 24) downPatrol(e);
-  }
-  hotTrails = hotTrails.filter(t => t.life > 0 && t.y > -100).slice(-180);
   for (const shot of [...shots]) {
     const oldX = shot.x, oldY = shot.y;
     shot.life -= dt; shot.x += shot.vx * dt; shot.y += (shot.speed - downhillSpeed) * dt;
-    if (shot.kind === 'snowball') shot.radius = Math.min(shot.maxRadius, shot.radius + dt * 12);
+    if (shot.kind === 'snowball') shot.radius = Math.min(shot.maxRadius, shot.radius + dt * shot.growthRate);
     shot.angle += dt * (shot.kind === 'snowball' ? shot.speed / shot.radius : shot.kind === 'domino' ? 8 : 12);
     // Swept segment avoids missing targets at high speed.
     const dx = shot.x - oldX, dy = shot.y - oldY, length = dx * dx + dy * dy;
@@ -418,6 +777,46 @@ function updateUpgradeEffects(dt, downhillSpeed, steering, brake) {
     }
   }
 }
+// Fixed lighting, rotating surface: the patches roll over a sphere rather than
+// spinning a flat circle. Precompute chunky 16px frames, like the terrain sprites.
+const snowballFrames = Array.from({length: 24}, (_, frame) => {
+  const angle = frame / 24 * Math.PI * 2, pixels = [];
+  const shades = ['#888888', '#a0a0a0', '#b6b6b6', '#cccccc', '#dedede', '#eeeeee', '#ffffff'];
+  const inside = (x, y) => (x - 7.5) ** 2 + (y - 7.5) ** 2 < 64;
+  for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
+    if (!inside(x, y)) continue;
+    const nx = (x - 7.5) / 8, ny = (y - 7.5) / 8;
+    const nz = Math.sqrt(Math.max(0, 1 - nx * nx - ny * ny));
+    const sy = ny * Math.cos(angle) - nz * Math.sin(angle);
+    const sz = ny * Math.sin(angle) + nz * Math.cos(angle);
+    const patch = (Math.imul(Math.floor((nx + 1) * 5), 73) ^ Math.imul(Math.floor((sy + 1) * 5), 37) ^ Math.imul(Math.floor((sz + 1) * 5), 19)) & 7;
+    const rim = !inside(x - 1, y) || !inside(x + 1, y) || !inside(x, y - 1) || !inside(x, y + 1);
+    const light = -nx * .35 - ny * .5 + nz * .55;
+    const shade = rim ? 0 : Math.max(1, Math.min(6, Math.round(2.1 + light * 4 + (patch < 2 ? -.8 : patch > 5 ? .7 : 0))));
+    pixels.push({x, y, color: shades[shade]});
+  }
+  return pixels;
+});
+function drawRollingSnowball(s) {
+  const r = s.radius, unit = r / 8;
+  const phase = s.angle % (Math.PI * 2);
+  const frame = Math.floor(phase / (Math.PI * 2) * snowballFrames.length);
+  ctx.fillStyle = '#dddddd';
+  ctx.fillRect(-r * .75, r * .65, r * 1.5, Math.max(2, unit * 2));
+  // A few blocky crumbs peel off uphill as the ball rolls downhill.
+  for (let i = 0; i < 4; i++) {
+    const progress = (phase / (Math.PI * 2) * 3 + i / 4) % 1;
+    ctx.fillStyle = i % 2 ? '#cccccc' : '#e4e4e4';
+    const size = Math.max(2, Math.round(unit * (1.5 - progress)));
+    ctx.fillRect(Math.round((i % 2 ? 1 : -1) * r * (.25 + progress * .65)), Math.round(-r - progress * r * .8), size, size);
+  }
+  const bounce = Math.round(Math.abs(Math.sin(s.angle * 2)) * Math.min(2, unit));
+  for (const p of snowballFrames[frame]) {
+    const x = Math.round((p.x - 8) * unit), y = Math.round((p.y - 8) * unit) - bounce;
+    ctx.fillStyle = p.color;
+    ctx.fillRect(x, y, Math.round((p.x - 7) * unit) - x, Math.round((p.y - 7) * unit) - bounce - y);
+  }
+}
 function drawUpgradeEffects() {
   for (const b of bombs) {
     ctx.save();
@@ -428,21 +827,10 @@ function drawUpgradeEffects() {
     }
     ctx.restore();
   }
-  for (const t of hotTrails) { ctx.fillStyle = '#ff863b'; ctx.fillRect(t.x - 8, t.y, 3, 12); ctx.fillRect(t.x + 5, t.y, 3, 12); }
   for (const s of shots) {
     ctx.save(); ctx.translate(s.x, s.y);
     if (s.kind === 'snowball') {
-      const r = s.radius;
-      ctx.fillStyle = '#dceff3'; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = '#7fabb5'; ctx.lineWidth = 2; ctx.stroke();
-      ctx.save(); ctx.rotate(s.angle);
-      // Uneven snow seams and packed flecks visibly turn with the rolling ball.
-      ctx.strokeStyle = '#9bbfc9'; ctx.lineWidth = Math.max(2, r * .1);
-      ctx.beginPath(); ctx.arc(-r * .15, 0, r * .65, -.9, 1.8); ctx.stroke();
-      ctx.beginPath(); ctx.arc(r * .2, -r * .1, r * .35, 2.2, 4.7); ctx.stroke();
-      ctx.fillStyle = '#fff'; ctx.fillRect(-r * .6, -r * .4, r * .22, r * .18);
-      ctx.fillStyle = '#91b6c1'; ctx.fillRect(r * .2, r * .5, r * .2, r * .15);
-      ctx.restore();
+      drawRollingSnowball(s);
     }
     else if (s.kind === 'skis') {
       ctx.fillStyle = '#111'; ctx.fillRect(-9, -19, 8, 38); ctx.fillRect(1, -19, 8, 38);
@@ -483,6 +871,8 @@ const canvas = document.querySelector('#game');
 const ctx = canvas.getContext('2d');
 const ui = Object.fromEntries(['score', 'wanted', 'health', 'healthFill', 'patrolStatus', 'best', 'time', 'distance', 'speed', 'multiplier', 'trickScore', 'scoreReadout', 'scoreLabel', 'speedFill', 'overlay', 'pause', 'message'].map(id => [id, document.getElementById(id)]));
 const keys = new Set();
+const pauseUI = Object.fromEntries(['pauseMenu', 'resumeRun', 'viewPowers', 'viewSound', 'viewCheats', 'quitRun', 'powersPopup', 'powersList', 'closePowers', 'soundPopup', 'closeSound', 'cheatsPopup', 'cheatForm', 'cheatCode', 'cheatResult', 'closeCheats'].map(id => [id, document.getElementById(id)]));
+const titleContent = { eyebrow: ui.overlay.querySelector('.eyebrow').textContent, heading: ui.overlay.querySelector('h1').innerHTML, description: ui.overlay.querySelector('p').innerHTML };
 let width = 1000, height = 650, mode = 'ready', previous = 0, world = 0;
 let score = 0, health = 100, heat = 0, escapeStars = 0, escapeTime = 0;
 let selectedGameMode = 'normal', runMode = 'normal', powerUnlocked = false;
@@ -538,8 +928,9 @@ function hop() {
     jumpKind = 'hop'; airDuration = .45; airTime = airDuration; hopCooldown = .75;
   }
   if (rank('rain') && bombs.length < 60) bombs.push({x: board.x, y: board.y, blast: .35, fresh: true});
-  if (rank('snowball') && snowCharge >= 1) { launchShot('snowball', board.x, board.y + 25); snowCharge = 0; }
+  if (rank('snowball') && snowCharge >= 1) { launchSnowballs(); snowCharge = 0; }
   // Small hops carry the existing lateral momentum through the entire flight.
+  gameAudio.effect('hop');
   burst(board.x, board.y, '#ccc');
 }
 function resize() {
@@ -553,7 +944,7 @@ function resize() {
   board.y = height * CAMERA_BOARD_Y;
   // Resizing moves the camera, never the board's position on the mountain.
   for (const item of [...entities, ...trails, ...particles]) item.y += board.y - oldBoardY;
-  for (const item of [...shots, ...hotTrails, ...bombs]) item.y += board.y - oldBoardY;
+  for (const item of [...shots, ...bombs]) item.y += board.y - oldBoardY;
   if (mode === 'playing' || mode === 'paused') ensureTerrain();
 }
 new ResizeObserver(resize).observe(canvas);
@@ -645,14 +1036,17 @@ function selectGameMode(choice) {
   selectedGameMode = choice; updateModePicker();
   start();
 }
-function unlockPowerMode() {
-  if (runMode !== 'normal' || powerUnlocked) return false;
+function unlockPowerMode(cheat = false) {
+  if ((!cheat && runMode !== 'normal') || powerUnlocked) return false;
   powerUnlocked = true;
   try { localStorage.setItem('snowfree-power-unlocked', 'true'); } catch {}
   updateModePicker();
   return true;
 }
 function start() {
+  gameAudio.unlock();
+  gameAudio.resetMusic();
+  closePauseMenus();
   runMode = selectedGameMode === 'power' && powerUnlocked ? 'power' : 'normal';
   resetUpgrades();
   score = 0; health = 100; heat = 0; escapeStars = 0; escapeTime = 0;
@@ -676,13 +1070,83 @@ function start() {
   toast('RUNAWAY BOARD! Hit skiers to start trouble.'); updateHUD();
 }
 function togglePause() {
+  gameAudio.unlock();
   if (mode !== 'playing' && mode !== 'paused') return;
   mode = mode === 'playing' ? 'paused' : 'playing';
+  keys.clear(); touch = null;
+  closePauseMenus();
+  if (mode === 'paused') {
+    gameAudio.hush();
+    pauseUI.viewPowers.hidden = runMode !== 'power';
+    pauseUI.pauseMenu.hidden = false;
+    pauseUI.resumeRun.focus({ preventScroll: true });
+  } else ui.pause.focus({ preventScroll: true });
   ui.pause.textContent = mode === 'paused' ? 'Resume · P' : 'Pause · P';
   toast(mode === 'paused' ? 'PAUSED — press P or Resume' : 'BACK ON THE SLOPE');
 }
+function closePauseMenus() {
+  pauseUI.pauseMenu.hidden = true;
+  pauseUI.powersPopup.hidden = true;
+  pauseUI.soundPopup.hidden = true;
+  pauseUI.cheatsPopup.hidden = true;
+}
+function showCheats() {
+  if (mode !== 'ready' && mode !== 'over') return;
+  closePauseMenus(); pauseUI.cheatsPopup.hidden = false;
+  ui.overlay.hidden = true;
+  pauseUI.cheatCode.value = ''; pauseUI.cheatResult.textContent = '';
+  pauseUI.cheatCode.focus({ preventScroll: true });
+}
+function closeCheats() {
+  pauseUI.cheatsPopup.hidden = true; ui.overlay.hidden = false;
+  pauseUI.viewCheats.focus({ preventScroll: true });
+}
+function showSound() {
+  if (mode !== 'paused') return;
+  closePauseMenus(); gameAudio.renderSettings();
+  pauseUI.soundPopup.hidden = false;
+  pauseUI.soundPopup.querySelector('input').focus({ preventScroll: true });
+}
+function showPowers() {
+  if (mode !== 'paused' || runMode !== 'power') return;
+  pauseUI.powersList.replaceChildren();
+  for (const [id, name, category, , description] of upgradeCatalog) {
+    const entry = document.createElement('article');
+    entry.className = 'power-entry';
+    entry.classList.toggle('owned', rank(id) > 0);
+    const heading = document.createElement('h3'); heading.textContent = name;
+    const status = document.createElement('small');
+    status.textContent = `${category} · ${rank(id) ? `RANK ${rank(id)}` : 'NOT COLLECTED'}${id === 'wind' && rank(id) ? ` · ${rescueCharges} RESCUES LEFT` : ''}`;
+    const text = document.createElement('p'); text.textContent = description;
+    entry.append(heading, status, text); pauseUI.powersList.append(entry);
+  }
+  pauseUI.pauseMenu.hidden = true; pauseUI.powersPopup.hidden = false;
+  pauseUI.powersList.scrollTop = 0;
+  pauseUI.powersList.focus({ preventScroll: true });
+}
+function backToPause() {
+  if (mode !== 'paused') return;
+  const fromSound = !pauseUI.soundPopup.hidden;
+  closePauseMenus(); pauseUI.pauseMenu.hidden = false;
+  (fromSound ? pauseUI.viewSound : pauseUI.viewPowers).focus({ preventScroll: true });
+}
+function quitRun() {
+  if (mode !== 'paused') return;
+  gameAudio.hush();
+  bankChain(); best = Math.max(best, Math.floor(score));
+  try { localStorage.setItem('snowfree-best', String(best)); } catch {}
+  ui.best.textContent = best.toLocaleString();
+  resetUpgrades(); closePauseMenus(); keys.clear(); touch = null;
+  mode = 'ready'; ui.overlay.hidden = false; ui.scoreReadout.hidden = true;
+  ui.pause.textContent = 'Pause · P'; toastTimer = 0;
+  ui.overlay.querySelector('.eyebrow').textContent = titleContent.eyebrow;
+  ui.overlay.querySelector('h1').innerHTML = titleContent.heading;
+  ui.overlay.querySelector('p').innerHTML = titleContent.description;
+  updateModePicker(); document.getElementById('normalMode').focus({ preventScroll: true });
+}
 function end(reason = 'crash') {
   if (rescue()) return;
+  gameAudio.hush();
   bankChain(); ui.scoreReadout.hidden = true;
   mode = 'over'; best = Math.max(best, Math.floor(score));
   try { localStorage.setItem('snowfree-best', String(best)); } catch {}
@@ -696,7 +1160,48 @@ document.getElementById('normalMode').addEventListener('click', () => selectGame
 document.getElementById('powerMode').addEventListener('click', () => selectGameMode('power'));
 updateModePicker();
 ui.pause.addEventListener('click', togglePause);
+pauseUI.resumeRun.addEventListener('click', () => { if (mode === 'paused') togglePause(); });
+pauseUI.viewPowers.addEventListener('click', showPowers);
+pauseUI.closePowers.addEventListener('click', backToPause);
+pauseUI.viewSound.addEventListener('click', showSound);
+pauseUI.closeSound.addEventListener('click', backToPause);
+pauseUI.viewCheats.addEventListener('click', showCheats);
+pauseUI.closeCheats.addEventListener('click', closeCheats);
+pauseUI.cheatForm.addEventListener('submit', e => {
+  e.preventDefault();
+  if ((mode !== 'ready' && mode !== 'over') || pauseUI.cheatsPopup.hidden) return;
+  if (pauseUI.cheatCode.value.trim() !== '1234') {
+    pauseUI.cheatResult.textContent = 'Unknown code. Try again.';
+    return;
+  }
+  unlockPowerMode(true);
+  pauseUI.cheatResult.textContent = 'POWER UNLOCKED! Go back and select Power.';
+  pauseUI.cheatCode.value = '';
+});
+pauseUI.quitRun.addEventListener('click', quitRun);
 window.addEventListener('keydown', e => {
+  gameAudio.unlock();
+  if (!pauseUI.cheatsPopup.hidden) {
+    if (e.key === 'Escape') { e.preventDefault(); closeCheats(); }
+    else if (e.key === 'Tab') {
+      const controls = [...pauseUI.cheatsPopup.querySelectorAll('button, input')];
+      e.preventDefault();
+      controls[(controls.indexOf(document.activeElement) + (e.shiftKey ? controls.length - 1 : 1)) % controls.length].focus();
+    }
+    return;
+  }
+  if (mode === 'paused') {
+    if (e.key === 'Tab') {
+      const panel = !pauseUI.soundPopup.hidden ? pauseUI.soundPopup : pauseUI.powersPopup.hidden ? pauseUI.pauseMenu : pauseUI.powersPopup;
+      const controls = [...panel.querySelectorAll('button, input, [tabindex="0"]')].filter(el => !el.hidden && !el.disabled);
+      e.preventDefault();
+      controls[(controls.indexOf(document.activeElement) + (e.shiftKey ? controls.length - 1 : 1)) % controls.length].focus();
+    } else if (!e.repeat && (e.key === 'Escape' || e.key.toLowerCase() === 'p' && e.target !== pauseUI.cheatCode)) {
+      e.preventDefault();
+      if (e.key === 'Escape' && (!pauseUI.powersPopup.hidden || !pauseUI.soundPopup.hidden)) backToPause(); else togglePause();
+    }
+    return;
+  }
   if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].includes(e.key)) e.preventDefault();
   keys.add(e.key.toLowerCase()); if (e.key.toLowerCase() === 'p' && !e.repeat) togglePause();
   if (e.key === ' ' && !e.repeat) hop();
@@ -706,6 +1211,7 @@ window.addEventListener('blur', () => { keys.clear(); touch = null; if (mode ===
 document.addEventListener('visibilitychange', () => { if (document.hidden && mode === 'playing') togglePause(); });
 function pointer(e) { const r = canvas.getBoundingClientRect(); touch = { x: (e.clientX - r.left) / CAMERA_ZOOM, y: (e.clientY - r.top) / CAMERA_ZOOM }; }
 canvas.addEventListener('pointerdown', e => {
+  gameAudio.unlock();
   if (e.button !== 0 || !e.isPrimary) return;
   canvas.setPointerCapture(e.pointerId); pointer(e); hop();
 });
@@ -782,8 +1288,10 @@ function ensureTerrain() {
     return !e.chunk || active.has(e.chunk);
   });
 }
-function damage(amount, text, speedRetention = .55) {
+function damage(amount, text, speedRetention = .55, obstacleType = '') {
   if (invincible > 0) return;
+  if (obstacleType === 'tree' || obstacleType === 'dryTree') gameAudio.effect('wood');
+  else if (obstacleType === 'rock') gameAudio.effect('rock');
   breakMultiplier();
   health -= amount * (1 + .5 * rank('glass')); invincible = 1.3; board.speed *= speedRetention; burst(board.x, board.y, '#e6653d'); toast(text);
 }
@@ -804,7 +1312,10 @@ function update(dt) {
   hopCooldown = Math.max(0, hopCooldown - dt);
   const wasAirborne = airTime > 0;
   airTime = Math.max(0, airTime - dt);
-  if (wasAirborne && airTime === 0) burst(board.x, board.y, '#ccc');
+  if (wasAirborne && airTime === 0) {
+    burst(board.x, board.y, '#ccc');
+    gameAudio.effect('landing');
+  }
   let steering = Number(keys.has('arrowright') || keys.has('d')) - Number(keys.has('arrowleft') || keys.has('a'));
   if (touch) steering = clamp((touch.x - width / 2) / 70, -1, 1);
   const tuck = touch ? clamp(1 - touch.y / (height * .4), 0, 1) : Number(keys.has('arrowup') || keys.has('w'));
@@ -982,6 +1493,11 @@ function update(dt) {
       if (!touchesObstacle(hazard, patrol.x, patrol.y)) continue;
       if (hazard.type === 'snow') { roughSnow = true; continue; }
       downPatrol(patrol);
+      if (hazard.type === 'tree' && !hazard.snowRemoved) {
+        hazard.snowRemoved = true; hazard.snowKnockedAt = elapsed;
+      } else if (hazard.type === 'rock' && !hazard.cracked) {
+        hazard.cracked = true; hazard.crackedAt = elapsed;
+      }
       patrol.facing = Math.sign(patrol.vx) || 1;
       burst(patrol.x, patrol.y, '#e9b645');
       if (hazard.type === 'dryTree' && !hazard.burning) {
@@ -1023,6 +1539,7 @@ function update(dt) {
       board.edge = 0;
       board.traverse = 0;
       burst(board.x, board.y, '#ccc'); toast('AIRBORNE! SPEED BOOST!');
+      gameAudio.effect('rainbow');
     }
   }
   if (helicopter && airTime > 0 && jumpKind === 'ramp' && jumpHeight() > .35
@@ -1095,7 +1612,7 @@ function update(dt) {
           e.burning = true; e.ignitedAt = elapsed;
           burst(e.x, e.y, '#ff9100');
         }
-        damage(e.type === 'yeti' ? 20 : 7.5, e.type === 'yeti' ? 'YETI ATTACK! −20 condition' : e.type === 'dryTree' ? 'TREE IGNITED! −8 condition' : 'OBSTACLE! −8 condition', e.type === 'rock' ? .5 : .55);
+        damage(e.type === 'yeti' ? 20 : 7.5, e.type === 'yeti' ? 'YETI ATTACK! −20 condition' : e.type === 'dryTree' ? 'TREE IGNITED! −8 condition' : 'OBSTACLE! −8 condition', e.type === 'rock' ? .5 : .55, e.type);
       }
     }
   }
@@ -1337,6 +1854,53 @@ function drawTreeFire(e) {
   }
   ctx.globalAlpha = 1;
 }
+function drawTreeSnow(e) {
+  const shape = TREE_SHAPES[e.treeShape];
+  const age = e.snowRemoved ? elapsed - e.snowKnockedAt : 0;
+  // Snow sits on four branch shelves. Each chunk falls from its own shelf
+  // with a little sideways scatter, then remains at the foot of the tree.
+  [.16, .39, .64, .86].forEach((fraction, tier) => {
+    const half = Math.max(2, Math.floor(shape.halfWidth * fraction ** .85 * .85));
+    for (let col = -half; col <= half; col += 2) {
+      const startX = e.x + col * 2;
+      const startY = e.y + 12 - shape.rows * 2 + Math.floor(shape.rows * fraction) * 2 + Math.abs(col) % 3 * 2;
+      const seed = (col + half) * 7 + tier * 13;
+      let x = startX, y = startY;
+      if (e.snowRemoved) {
+        const progress = clamp((age - tier * .045) / (.55 + (1 - fraction) * .35), 0, 1);
+        x += (col * .7 + Math.sin(seed) * 5) * progress;
+        const groundY = e.y + 13 + seed % 5 * 2;
+        y += (groundY - startY) * progress * progress;
+      }
+      pixel(x, y + 3, '#b7cdd5', 5, 3);
+      pixel(x, y, seed % 3 ? '#f5faff' : '#dceaf0', 5, 4);
+    }
+  });
+}
+function drawCrackedRock(e) {
+  const age = Math.max(0, elapsed - e.crackedAt);
+  const opening = Math.min(1, age / .2);
+  const rows = sprites.rock;
+  rows.forEach((row, j) => [...row].forEach((c, i) => {
+    if (!palette[c]) return;
+    const seam = j % 3 === 1 ? 6 : 5;
+    // The top parts pull apart; the bottom two rows remain joined.
+    const split = j < 6 ? Math.round((j < 4 ? 2 : 1) * opening) * 2 : 0;
+    const side = i <= seam ? -1 : 1;
+    const color = j < 6 && (i === seam || i === seam + 1) ? '#444' : palette[c];
+    pixel(e.x + (i - row.length / 2) * 2 + side * split, e.y + (j - rows.length / 2) * 2, color);
+  }));
+  // Short ballistic arcs end in a few chips resting beside the connected base.
+  for (let i = 0; i < 7; i++) {
+    const duration = .32 + i * .045;
+    const progress = Math.min(1, age / duration);
+    const side = i % 2 ? 1 : -1;
+    const x = e.x + side * (3 + progress * (9 + i * 2));
+    const y = e.y - 4 + progress * (13 + i % 3 * 2) - Math.sin(progress * Math.PI) * (8 + i % 3 * 4);
+    const size = i % 3 === 0 ? 3 : 2;
+    pixel(x, y, i % 2 ? '#777' : '#aaa', size, size);
+  }
+}
 function drawEntity(e) {
   if (e.dominoLaunched) return;
   const { x, y, type } = e;
@@ -1386,6 +1950,7 @@ function drawEntity(e) {
         pixel(x + col * 2, y + 12 - shape.rows * 2 + row * 2, fleck < 2 ? '#d8dc00' : fleck < 8 ? '#00b900' : '#008000');
       }
     }
+    drawTreeSnow(e);
   } else if (type === 'snow') {
     for (const [dx, dy, halfWidth] of SNOW_SHAPES[e.snowShape]) {
       for (let px = -halfWidth; px <= halfWidth; px += 2) {
@@ -1407,7 +1972,10 @@ function drawEntity(e) {
       const pose = skierPose(e);
       sprite(pose.name, x, y, 0, false, pose.mirrored);
     }
-  } else sprite(type, x, y, 0, e.hit);
+  } else {
+    if (type === 'rock' && e.cracked) drawCrackedRock(e);
+    else sprite(type, x, y, 0, e.hit);
+  }
 }
 function entityDrawOrder() {
   const obstacles = entities.filter(e => ['tree', 'dryTree', 'rock', 'snow', 'yeti'].includes(e.type));
@@ -1480,7 +2048,11 @@ function drawHelicopter(craft = helicopter, altitude = 60) {
 }
 function frame(now) {
   const dt = Math.min((now - previous) / 1000 || 0, .04); previous = now;
-  if (mode === 'playing') update(dt); draw(); requestAnimationFrame(frame);
+  if (mode === 'playing') update(dt);
+  const nearbyPatrol = entities.filter(e => e.type === 'patrol' && !e.hit && Math.hypot(e.x - board.x, e.y - board.y) < 300).length;
+  const musicPressure = Math.min(1, nearbyPatrol * .2 + (helicopter ? .5 : 0));
+  gameAudio.update(mode === 'playing', Math.hypot(board.speed * (1 - board.traverse), board.vx), board.vx, airTime === 0, score, musicPressure);
+  draw(); requestAnimationFrame(frame);
 }
 resize(); updateHUD(); requestAnimationFrame(frame);
 
