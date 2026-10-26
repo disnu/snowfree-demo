@@ -559,19 +559,16 @@ const upgradeCatalog = [
   ['snowball', 'Snowball Effect', 'CHAIN REACTION', 'O', 'Carve to charge; hop to launch. Rank 2: two balls. Rank 3: faster growth. Rank 4: three balls. Every rank after 4: faster growth and longer travel.'],
   ['debris', 'Explosive Exit', 'CHAIN REACTION', '*', 'Helicopter takedowns launch a fan of debris that downs patrol and skiers. More ranks add fragments.'],
   ['bunny', 'Bunny Board', 'MOVEMENT', '^^', 'Hop again while airborne. Each rank adds one extra hop per flight.'],
-  ['powder', 'Powder Surfer', 'MOVEMENT', '~', 'Rough snow boosts speed instead of slowing you. More ranks strengthen the boost.'],
-  ['sling', 'Slingshot', 'MOVEMENT', '=>', 'Ground braking stores energy. Release to boost downhill. More ranks increase the boost.'],
   ['shave', 'Close Shave', 'RISK / REWARD', '!', 'Skim past rocks and trees without hitting them for 100 points per rank, once per obstacle.'],
   ['enemy', 'Public Enemy', 'RISK / REWARD', '*****', 'Patrol arrival and helicopter drops are faster. Pursuit points increase by 50% per rank.'],
   ['glass', 'Glass Cannon', 'RISK / REWARD', 'X', 'Skier takedowns score 50% more per rank, but you take 50% more obstacle damage per rank.'],
   ['encore', 'Encore', 'STUNT', 'RAINBOW', 'Helicopter takedowns create a rainbow ramp ahead with a clear landing lane. More ranks add 250 takedown points.'],
   ['repair', 'Scrap Repairs', 'SURVIVAL', '+', 'Every patrol knockdown repairs 5 board health per rank, including chain reactions.'],
   ['wind', 'Second Wind', 'SURVIVAL', '<3', 'Gain one rescue charge: survive a fatal hit or capture with 30 health, an escape jump and brief protection.'],
-  ['memory', 'Long Memory', 'SCORING', '...', 'Add one second per rank to the Vengeance chain window.'],
   ['crowd', 'Crowd Pleaser', 'STUNT', '+++', 'Each skier after the first hit during one flight adds a 250-point group bonus per rank.']
 ];
 let upgrades = {}, nextUpgradeScore = 5000, upgradeOffers = [], upgradeSelectionTimer;
-let shots = [], snowCharge = 0, slingCharge = 0, extraHops = 0, flightHits = 0, rescueCharges = 0;
+let shots = [], snowCharge = 0, extraHops = 0, flightHits = 0, rescueCharges = 0;
 let bombs = [], bombRain = false, bombTimer = 0;
 const rank = id => runMode === 'power' ? upgrades[id] || 0 : 0;
 const upgradeOverlay = document.getElementById('upgradeOverlay');
@@ -579,7 +576,7 @@ const upgradeCards = document.getElementById('upgradeCards');
 function resetUpgrades() {
   clearTimeout(upgradeSelectionTimer);
   upgrades = {}; nextUpgradeScore = 5000; upgradeOffers = [];
-  shots = []; snowCharge = 0; slingCharge = 0;
+  shots = []; snowCharge = 0;
   bombs = []; bombRain = false; bombTimer = 0;
   extraHops = 0; flightHits = 0; rescueCharges = 0;
   upgradeOverlay.hidden = true;
@@ -726,13 +723,6 @@ function updateUpgradeEffects(dt, downhillSpeed, steering, brake) {
   bombs = bombs.filter(b => b.blast > 0);
   if (airTime === 0 && Math.abs(steering) > .5) {
     if (rank('snowball')) snowCharge = Math.min(1, snowCharge + dt * .35);
-  }
-  if (rank('sling') && airTime === 0) {
-    if (brake > .5) slingCharge = Math.min(1, slingCharge + dt * .5);
-    else if (slingCharge > 0) {
-      board.speed = Math.min(MAX_SPEED, board.speed + slingCharge * 180 * rank('sling'));
-      slingCharge = 0; burst(board.x, board.y, '#00cddd');
-    }
   }
   for (const shot of [...shots]) {
     const oldX = shot.x, oldY = shot.y;
@@ -957,7 +947,7 @@ function awardScore(base, type) {
   }
   chainTotal += base;
   score += base;
-  chainLastType = type; chainTime = CHAIN_WINDOW + rank('memory');
+  chainLastType = type; chainTime = CHAIN_WINDOW;
   return chainTotal;
 }
 function bankChain() {
@@ -1584,10 +1574,6 @@ function update(dt) {
         skierUpgrades(e);
         burst(e.x, e.y, '#e9b645'); toast(hitMessage);
       } else if (e.type === 'snow') {
-        if (rank('powder')) {
-          if (!e.entered) { board.speed = Math.min(MAX_SPEED, board.speed + 100 * rank('powder')); e.entered = true; toast('POWDER SURFER!'); }
-          continue;
-        }
         // Small initial speed loss, then gentle friction over the visible bumps.
         if (!e.entered) { board.speed *= .8; e.entered = true; toast('ROUGH SNOW!'); }
         board.speed = Math.max(Math.min(board.speed, 50), board.speed - 210 * dt);
