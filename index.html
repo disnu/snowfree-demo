@@ -738,7 +738,7 @@ const upgradeCatalog = [
   ['enemy', 'Public Enemy', 'RISK / REWARD', '*****', 'Patrol arrival and helicopter drops are faster. Pursuit points increase by 50% per rank.'],
   ['glass', 'Glass Cannon', 'RISK / REWARD', 'X', 'Skier takedowns score 50% more per rank, but you take 50% more obstacle damage per rank.'],
   ['encore', 'Encore', 'STUNT', 'RAINBOW', 'Helicopter takedowns create a rainbow ramp ahead with a clear landing lane. More ranks add 250 takedown points.'],
-  ['repair', 'Scrap Repairs', 'SURVIVAL', 'ARM', 'Every patrol knockdown adds 1 armor, up to 5. Each armor point reduces damage by 1 percentage point per hit without being consumed. One rank only.'],
+  ['repair', 'Scrap Repairs', 'SURVIVAL', 'ARM', 'Every patrol knockdown adds 1 armor, up to 5. Damage consumes armor before board health: 1 armor absorbs 1 percentage point of damage. One rank only.'],
   ['wind', 'Second Wind', 'SURVIVAL', '<3', 'Gain one rescue charge: survive a fatal hit or capture with 30 health, an escape jump and brief protection.'],
   ['crowd', 'Crowd Pleaser', 'STUNT', '+++', 'Each skier after the first hit during one flight adds a 250-point group bonus per rank.']
 ];
@@ -1906,7 +1906,10 @@ function damage(amount, text, speedRetention = .55, obstacleType = '') {
   if (invincible > 0) return;
   breakMultiplier();
   const armored = armor > 0;
-  const healthLoss = Math.max(0, amount * (1 + .5 * rank('glass')) - armor);
+  const totalDamage = amount * (1 + .5 * rank('glass'));
+  const armorLoss = Math.min(armor, totalDamage);
+  const healthLoss = totalDamage - armorLoss;
+  armor -= armorLoss;
   if (armored) {
     gameAudio.effect('armor');
   } else {
@@ -1916,7 +1919,7 @@ function damage(amount, text, speedRetention = .55, obstacleType = '') {
   health -= healthLoss;
   invincible = 1.3; board.speed *= speedRetention;
   burst(board.x, board.y, armored ? '#8bd3e6' : '#e6653d');
-  toast(`${text.split('!')[0]}! −${healthLoss}% condition${armored ? ` · ARMOR −${armor}` : ''}`);
+  toast(`${text.split('!')[0]}! −${healthLoss}% condition${armored ? ` · ARMOR −${armorLoss}` : ''}`);
 }
 function touchesObstacle(e, x, y) {
   const radius = e.type === 'yeti' ? 29 : e.type === 'tree' ? TREE_SHAPES[e.treeShape].halfWidth * 2 + 5 : 21;
