@@ -731,7 +731,7 @@ const upgradeCatalog = [
   ['snowball', 'Snowball Effect', 'CHAIN REACTION', 'O', 'Carve to charge; hop to launch. Rank 2: two balls. Rank 3: faster growth. Rank 4: three balls. Every rank after 4: faster growth and longer travel.'],
   ['mix', 'Mix of Destruction', 'CHAIN REACTION', 'TREE', 'Patrol and tumbling skiers shake tree snow into snowballs. Uses your Snowball Effect count, growth and travel. One rank only.'],
   ['rocks', '30 Rocks', 'CHAIN REACTION', '30', 'Patrol and tumbling skiers break rocks into 30 tiny downhill pellets. More ranks widen the spread and extend travel.'],
-  ['gang', 'Gang Up', 'CHAIN REACTION', 'CREW', 'Every 5 seconds, summon one snowboarder per rank ahead of you. Summoned riders bypass the normal one-snowboarder limit.'],
+  ['gang', 'Gang Up', 'CHAIN REACTION', 'CREW', 'Every 5 seconds, summon one snowboarder per rank ahead of you. Summoned riders knock down patrol on contact at any distance from you and bypass the normal one-snowboarder limit.'],
   ['debris', 'Explosive Exit', 'CHAIN REACTION', '*', 'Helicopter takedowns launch a fan of debris that downs patrol and skiers. More ranks add fragments.'],
   ['bunny', 'Bunny Board', 'MOVEMENT', '^^', 'Hop again while airborne. Each rank adds one extra hop per flight.'],
   ['shave', 'Close Shave', 'RISK / REWARD', '!', 'Skim past rocks and trees without hitting them for 100 points per rank, once per obstacle.'],
@@ -1861,6 +1861,7 @@ function moveSnowboarder(e, dt, downhillSpeed) {
     let nearest = null;
     for (const obstacle of entities) {
       const person = ['skier', 'patrol'].includes(obstacle.type);
+      if (e.gangSummoned && obstacle.type === 'patrol') continue;
       if (person ? e.fleeing || obstacle.hit || obstacle.airTime > 0 || obstacle.dropTime > 0 : !['rock', 'tree', 'dryTree', 'yeti'].includes(obstacle.type)) continue;
       const half = obstacle.type === 'tree' ? TREE_SHAPES[obstacle.treeShape].halfWidth * 2 : 26;
       const dy = obstacle.oldY - e.oldY;
@@ -1884,11 +1885,16 @@ function moveSnowboarder(e, dt, downhillSpeed) {
 }
 function snowboarderHits() {
   for (const rider of entities) {
-    if (rider.type !== 'snowboarder' || rider.airTime > 0 || !rider.fleeing
-      || rider.y < board.y || Math.hypot(rider.x - board.x, rider.y - board.y) >= SNOWBOARDER_FLEE_RADIUS) continue;
+    if (rider.type !== 'snowboarder' || rider.airTime > 0) continue;
+    const nearbyFleeing = rider.fleeing && rider.y >= board.y
+      && Math.hypot(rider.x - board.x, rider.y - board.y) < SNOWBOARDER_FLEE_RADIUS;
+    if (!nearbyFleeing && !rider.gangSummoned) continue;
     for (const target of entities) {
       if (!['skier', 'patrol'].includes(target.type) || target.hit || target.airTime > 0 || target.dropTime > 0) continue;
-      if (Math.hypot(target.x - board.x, target.y - board.y) >= SNOWBOARDER_FLEE_RADIUS) continue;
+      // Summoned riders are player powers: patrol hits never depend on board proximity.
+      const powerPatrolHit = rider.gangSummoned && target.type === 'patrol';
+      if (!powerPatrolHit && (!nearbyFleeing
+        || Math.hypot(target.x - board.x, target.y - board.y) >= SNOWBOARDER_FLEE_RADIUS)) continue;
       // Relative swept collision catches fast passes through moving targets.
       const x = rider.oldX - target.oldX, y = rider.oldY - target.oldY;
       const dx = rider.x - target.x - x, dy = rider.y - target.y - y;
