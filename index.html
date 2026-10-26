@@ -99,6 +99,9 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; image-re
 .condition-label { display: flex; justify-content: space-between; color: #566039; font-size: 8px; margin: 22px 0 8px; }
 .condition-track { height: 10px; background: #323e52; border: 2px solid #19273c; box-shadow: 2px 2px #a7afbd; }
 #healthFill { height: 100%; width: 100%; background: #dbe85e; transition: width .15s; }
+.armor-status { margin-top: 6px; color: #3c7d91; font-size: 7px; letter-spacing: 1px; line-height: 1.6; }
+.armor-status strong { color: #0e2c38; font-size: 8px; margin-left: 3px; }
+.armor-status span { color: #5d8999; }
 #wanted { display: block; font-family: monospace; font-size: 24px; letter-spacing: 6px; color: #a65a37; margin-top: 10px; }
 .personal-best { color: #8190a6; font-size: 7px; margin-top: 7px; line-height: 1.6; }
 .patrol-status { font-size: 6px; line-height: 1.8; color: #a65a37; min-height: 11px; }
@@ -181,6 +184,8 @@ footer { height: 33px; display: flex; align-items: center; justify-content: spac
   #score { font-size: 21px; }
   .condition-label { margin-top: 15px; font-size: 6px; }
   #wanted { font-size: 19px; letter-spacing: 3px; margin-top: 6px; }
+  .armor-status { margin-top: 4px; font-size: 6px; }
+  .armor-status strong { font-size: 7px; }
   .personal-best { font-size: 6px; }
   .run-clock { top: 175px; }
   .run-clock small { font-size: 6px; margin-bottom: 8px; }
@@ -241,6 +246,7 @@ footer { height: 33px; display: flex; align-items: center; justify-content: spac
   #score, #speed { font-size: 18px; }
   .condition-label { margin: 5px 0; }
   .condition-track { height: 6px; }
+  .armor-status { margin-top: 2px; }
   #wanted { margin-top: 2px; }
   .run-clock { top: 72px; }
   #message { top: 10px; max-width: 45%; font-size: 9px; }
@@ -270,6 +276,7 @@ footer { height: 33px; display: flex; align-items: center; justify-content: spac
       <div class="hud-label">SCORE</div><strong id="score">0</strong>
       <div class="condition-label"><span>BOARD</span><span id="health">100%</span></div>
       <div class="condition-track"><div id="healthFill"></div></div>
+      <div id="armorStatus" class="armor-status" aria-label="Armor" hidden>ARMOR <strong id="armor">0</strong><span id="armorMax">/5</span></div>
       <strong id="wanted" aria-label="Wanted level 0 of 5">☆☆☆☆☆</strong>
       <div id="patrolStatus" class="patrol-status"></div>
       <div class="personal-best">BEST <span id="best">0</span></div>
@@ -645,6 +652,11 @@ const gameAudio = (() => {
       note(120, 38, 0, .15, .32, 'square', 700);
       note(1900, 630, 0, .065, .2, 'square', 3200);
       note(920, 370, .025, .075, .1, 'triangle', 2200);
+    } else if (kind === 'armor') {
+      // Scrap plate takes the hit: bright metal clank over a low board thud.
+      note(1560, 720, 0, .1, .16, 'square', 3600);
+      note(840, 410, .012, .16, .2, 'triangle', 1900);
+      note(150, 80, 0, .12, .3, 'triangle', 700);
     } else if (kind === 'rainbow') {
       [523.25, 659.25, 783.99, 1046.5, 1318.51].forEach((pitch, i) => {
         note(pitch, pitch * 1.025, i * .055, .17, .16, 'square', 3500);
@@ -672,7 +684,7 @@ const upgradeCatalog = [
   ['enemy', 'Public Enemy', 'RISK / REWARD', '*****', 'Patrol arrival and helicopter drops are faster. Pursuit points increase by 50% per rank.'],
   ['glass', 'Glass Cannon', 'RISK / REWARD', 'X', 'Skier takedowns score 50% more per rank, but you take 50% more obstacle damage per rank.'],
   ['encore', 'Encore', 'STUNT', 'RAINBOW', 'Helicopter takedowns create a rainbow ramp ahead with a clear landing lane. More ranks add 250 takedown points.'],
-  ['repair', 'Scrap Repairs', 'SURVIVAL', '+', 'Every patrol knockdown repairs 5 board health per rank, including chain reactions.'],
+  ['repair', 'Scrap Repairs', 'SURVIVAL', 'ARM', 'Every patrol knockdown adds 1 armor, up to 5. Each armor absorbs one damaging hit before board condition. One rank only.'],
   ['wind', 'Second Wind', 'SURVIVAL', '<3', 'Gain one rescue charge: survive a fatal hit or capture with 30 health, an escape jump and brief protection.'],
   ['crowd', 'Crowd Pleaser', 'STUNT', '+++', 'Each skier after the first hit during one flight adds a 250-point group bonus per rank.']
 ];
@@ -696,7 +708,7 @@ function offerUpgrade() {
   if (runMode !== 'power' || mode !== 'playing' || score < nextUpgradeScore) return;
   mode = 'upgrading'; keys.clear(); touch = null;
   gameAudio.hush();
-  upgradeOffers = upgradeCatalog.filter(([id]) => id !== 'mix' || !rank(id));
+  upgradeOffers = upgradeCatalog.filter(([id]) => !['mix', 'repair'].includes(id) || !rank(id));
   for (let i = upgradeOffers.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [upgradeOffers[i], upgradeOffers[j]] = [upgradeOffers[j], upgradeOffers[i]];
@@ -721,7 +733,7 @@ function offerUpgrade() {
 function chooseUpgrade(index) {
   if (mode !== 'upgrading' || !upgradeOffers[index]) return;
   mode = 'upgrade-selected';
-  const [id, name] = upgradeOffers[index]; upgrades[id] = id === 'mix' ? 1 : rank(id) + 1;
+  const [id, name] = upgradeOffers[index]; upgrades[id] = ['mix', 'repair'].includes(id) ? 1 : rank(id) + 1;
   if (id === 'wind') rescueCharges++;
   [...upgradeCards.children].forEach((card, i) => {
     card.disabled = true; card.classList.add(i === index ? 'chosen' : 'dismissed');
@@ -814,8 +826,11 @@ function settleDomino(shot) {
 function downPatrol(e, points = 200) {
   if (e.hit) return;
   e.hit = true; e.fallen = true; e.speed = 0; e.latched = false; e.life = 0;
-  score += points; health = Math.min(100, health + 5 * rank('repair'));
-  burst(e.x, e.y, '#e9b645'); toast(`PATROL DOWN! +${points}`);
+  const armorGained = rank('repair') > 0 && armor < ARMOR_CAP;
+  if (armorGained) armor++;
+  score += points;
+  burst(e.x, e.y, '#e9b645');
+  toast(`PATROL DOWN!${points ? ` +${points}` : ''}${armorGained ? ' · ARMOR +1' : ''}`);
 }
 function rescue() {
   if (rescueCharges <= 0) return false;
@@ -1038,7 +1053,7 @@ function drawUpgradeEffects() {
 'use strict';
 const canvas = document.querySelector('#game');
 const ctx = canvas.getContext('2d');
-const ui = Object.fromEntries(['score', 'wanted', 'health', 'healthFill', 'patrolStatus', 'best', 'time', 'distance', 'speed', 'multiplier', 'trickScore', 'scoreReadout', 'scoreLabel', 'speedFill', 'overlay', 'pause', 'message'].map(id => [id, document.getElementById(id)]));
+const ui = Object.fromEntries(['score', 'wanted', 'health', 'healthFill', 'armor', 'armorMax', 'armorStatus', 'patrolStatus', 'best', 'time', 'distance', 'speed', 'multiplier', 'trickScore', 'scoreReadout', 'scoreLabel', 'speedFill', 'overlay', 'pause', 'message'].map(id => [id, document.getElementById(id)]));
 const keys = new Set();
 const pauseUI = Object.fromEntries(['pauseMenu', 'resumeRun', 'viewPowers', 'viewSound', 'viewCheats', 'quitRun', 'powersPopup', 'powersList', 'closePowers', 'soundPopup', 'closeSound', 'cheatsPopup', 'cheatForm', 'cheatCode', 'cheatResult', 'closeCheats'].map(id => [id, document.getElementById(id)]));
 const titleContent = { eyebrow: ui.overlay.querySelector('.eyebrow').textContent, heading: ui.overlay.querySelector('h1').innerHTML, description: ui.overlay.querySelector('p').innerHTML };
@@ -1261,7 +1276,8 @@ onlineScores = readScoreCache();
 renderLeaderboard();
 loadLeaderboard({ announce: false });
 let width = 1000, height = 650, mode = 'ready', previous = 0, world = 0;
-let score = 0, health = 100, heat = 0, escapeStars = 0, escapeTime = 0;
+let score = 0, health = 100, armor = 0, heat = 0, escapeStars = 0, escapeTime = 0;
+const ARMOR_CAP = 5;
 let selectedGameMode = 'normal', runMode = 'normal', powerUnlocked = false;
 let elapsed = 0, patrolTimer = 0, yetiTimer = 24, invincible = 0;
 let terrainChunks = new Set(), terrainSeed = 1;
@@ -1402,6 +1418,9 @@ function updateHUD() {
   ui.scoreReadout.hidden = !showingScore;
   ui.scoreReadout.dataset.active = String(showingScore);
   ui.healthFill.style.width = `${clamp(health, 0, 100)}%`;
+  ui.armorStatus.hidden = rank('repair') <= 0;
+  ui.armor.textContent = armor;
+  ui.armorMax.textContent = `/${ARMOR_CAP}`;
   ui.patrolStatus.textContent = heat === 0 ? '' : patrolPending ? `ARRIVING IN ${Math.max(1, Math.ceil(patrolTimer))}s` : 'IN PURSUIT';
   ui.speedFill.style.width = `${clamp(board.speed / MAX_SPEED, 0, 1) * 100}%`;
   ui.score.textContent = Math.floor(score).toLocaleString(); ui.health.textContent = `${Math.max(0, Math.ceil(health))}%`;
@@ -1438,7 +1457,7 @@ function start() {
   closePauseMenus();
   runMode = selectedGameMode === 'power' && powerUnlocked ? 'power' : 'normal';
   resetUpgrades();
-  score = 0; health = 100; heat = 0; escapeStars = 0; escapeTime = 0;
+  score = 0; health = 100; armor = 0; heat = 0; escapeStars = 0; escapeTime = 0;
   elapsed = 0; world = 0; patrolTimer = 0; yetiTimer = 24; invincible = 0;
   terrainChunks = new Set(); terrainSeed = Math.floor(Math.random() * 0x7fffffff);
   jumpLanes = new Map();
@@ -1525,7 +1544,7 @@ function quitRun() {
   bankChain(); best = Math.max(best, Math.floor(score));
   try { localStorage.setItem('snowfree-best', String(best)); } catch {}
   ui.best.textContent = best.toLocaleString();
-  resetUpgrades(); closePauseMenus(); keys.clear(); touch = null;
+  resetUpgrades(); armor = 0; ui.armorStatus.hidden = true; closePauseMenus(); keys.clear(); touch = null;
   mode = 'ready'; ui.overlay.hidden = false; ui.scoreReadout.hidden = true;
   ui.pause.textContent = 'Pause · P'; toastTimer = 0;
   ui.overlay.querySelector('.eyebrow').textContent = titleContent.eyebrow;
@@ -1766,10 +1785,19 @@ function snowboarderHits() {
 }
 function damage(amount, text, speedRetention = .55, obstacleType = '') {
   if (invincible > 0) return;
-  if (obstacleType === 'tree' || obstacleType === 'dryTree') gameAudio.effect('wood');
-  else if (obstacleType === 'rock') gameAudio.effect('rock');
   breakMultiplier();
-  health -= amount * (1 + .5 * rank('glass')); invincible = 1.3; board.speed *= speedRetention; burst(board.x, board.y, '#e6653d'); toast(text);
+  const armored = armor > 0;
+  if (armored) {
+    armor--;
+    gameAudio.effect('armor');
+  } else {
+    if (obstacleType === 'tree' || obstacleType === 'dryTree') gameAudio.effect('wood');
+    else if (obstacleType === 'rock') gameAudio.effect('rock');
+    health -= amount * (1 + .5 * rank('glass'));
+  }
+  invincible = 1.3; board.speed *= speedRetention;
+  burst(board.x, board.y, armored ? '#8bd3e6' : '#e6653d');
+  toast(armored ? `${text.split('!')[0]}! ARMOR ABSORBED${armor > 0 ? ` · ${armor} LEFT` : ''}` : text);
 }
 function touchesObstacle(e, x, y) {
   const radius = e.type === 'yeti' ? 29 : e.type === 'tree' ? TREE_SHAPES[e.treeShape].halfWidth * 2 + 5 : 21;
