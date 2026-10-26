@@ -557,6 +557,9 @@ const upgradeCatalog = [
   ['skis', 'Loose Cannons', 'CHAIN REACTION', 'II', 'Downed skiers release skis downhill, scoring hits on skiers and patrol. More ranks add piercing hits.'],
   ['domino', 'Domino Effect', 'CHAIN REACTION', '>>', 'Downed skiers tumble downhill into others. More ranks extend their reach.'],
   ['snowball', 'Snowball Effect', 'CHAIN REACTION', 'O', 'Carve to charge; hop to launch. Rank 2: two balls. Rank 3: faster growth. Rank 4: three balls. Every rank after 4: faster growth and longer travel.'],
+  ['mix', 'Mix of Destruction', 'CHAIN REACTION', 'TREE', 'Patrol and tumbling skiers shake tree snow into snowballs. Uses your Snowball Effect count, growth and travel. One rank only.'],
+  ['rocks', '30 Rocks', 'CHAIN REACTION', '30', 'Patrol and tumbling skiers break rocks into 30 tiny downhill pellets. More ranks widen the spread and extend travel.'],
+  ['gang', 'Gang Up', 'CHAIN REACTION', 'CREW', 'Every 5 seconds, summon one snowboarder per rank ahead of you. Summoned riders bypass the normal one-snowboarder limit.'],
   ['debris', 'Explosive Exit', 'CHAIN REACTION', '*', 'Helicopter takedowns launch a fan of debris that downs patrol and skiers. More ranks add fragments.'],
   ['bunny', 'Bunny Board', 'MOVEMENT', '^^', 'Hop again while airborne. Each rank adds one extra hop per flight.'],
   ['shave', 'Close Shave', 'RISK / REWARD', '!', 'Skim past rocks and trees without hitting them for 100 points per rank, once per obstacle.'],
@@ -570,6 +573,7 @@ const upgradeCatalog = [
 let upgrades = {}, nextUpgradeScore = 5000, upgradeOffers = [], upgradeSelectionTimer;
 let shots = [], snowCharge = 0, extraHops = 0, flightHits = 0, rescueCharges = 0;
 let bombs = [], bombRain = false, bombTimer = 0;
+let gangTimer = 5;
 const rank = id => runMode === 'power' ? upgrades[id] || 0 : 0;
 const upgradeOverlay = document.getElementById('upgradeOverlay');
 const upgradeCards = document.getElementById('upgradeCards');
@@ -578,6 +582,7 @@ function resetUpgrades() {
   upgrades = {}; nextUpgradeScore = 5000; upgradeOffers = [];
   shots = []; snowCharge = 0;
   bombs = []; bombRain = false; bombTimer = 0;
+  gangTimer = 5;
   extraHops = 0; flightHits = 0; rescueCharges = 0;
   upgradeOverlay.hidden = true;
 }
@@ -585,7 +590,7 @@ function offerUpgrade() {
   if (runMode !== 'power' || mode !== 'playing' || score < nextUpgradeScore) return;
   mode = 'upgrading'; keys.clear(); touch = null;
   gameAudio.hush();
-  upgradeOffers = [...upgradeCatalog];
+  upgradeOffers = upgradeCatalog.filter(([id]) => id !== 'mix' || !rank(id));
   for (let i = upgradeOffers.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [upgradeOffers[i], upgradeOffers[j]] = [upgradeOffers[j], upgradeOffers[i]];
@@ -610,7 +615,7 @@ function offerUpgrade() {
 function chooseUpgrade(index) {
   if (mode !== 'upgrading' || !upgradeOffers[index]) return;
   mode = 'upgrade-selected';
-  const [id, name] = upgradeOffers[index]; upgrades[id] = rank(id) + 1;
+  const [id, name] = upgradeOffers[index]; upgrades[id] = id === 'mix' ? 1 : rank(id) + 1;
   if (id === 'wind') rescueCharges++;
   [...upgradeCards.children].forEach((card, i) => {
     card.disabled = true; card.classList.add(i === index ? 'chosen' : 'dismissed');
@@ -633,7 +638,9 @@ window.addEventListener('keydown', e => {
   }
 });
 function launchShot(kind, x, y, vx = 0) {
-  if (shots.length >= 120) return;
+  // Pellets have a separate pool so a full shotgun volley cannot starve skis
+  // or snowballs, or be truncated by those longer-lived projectiles.
+  if (kind !== 'pebble' && shots.filter(s => s.kind !== 'pebble').length >= 120) return;
   const snowRank = Math.max(1, rank('snowball'));
   const shot = {kind, x, y, vx, speed: Math.max(600, board.speed + 240), life: kind === 'domino' ? .7 + rank('domino') * .3 : kind === 'snowball' ? 2.5 + Math.max(0, snowRank - 4) * .5 : 2.5,
     radius: 10, growthRate: 12 + (snowRank >= 3 ? 6 : 0) + Math.max(0, snowRank - 4) * 3,
@@ -654,11 +661,38 @@ function skierUpgrades(e) {
     }
   }
 }
-function launchSnowballs() {
+function launchSnowballs(x = board.x, y = board.y + 25, source = null) {
   const count = rank('snowball') >= 4 ? 3 : rank('snowball') >= 2 ? 2 : 1;
   for (let i = 0; i < count; i++) {
     const offset = i - (count - 1) / 2;
-    launchShot('snowball', board.x + offset * 28, board.y + 25, offset * 55);
+    const shot = launchShot('snowball', x + offset * 28, y, offset * 55);
+    if (shot && source) shot.victims.add(source);
+  }
+}
+function impactTerrain(e) {
+  if (e.type === 'tree' && !e.snowRemoved) {
+    e.snowRemoved = true; e.snowKnockedAt = elapsed;
+    if (rank('mix')) launchSnowballs(e.x, e.y + 25, e);
+  } else if (e.type === 'rock' && !e.cracked) {
+    e.cracked = true; e.crackedAt = elapsed;
+    if (rank('rocks')) {
+      let retire = Math.max(0, shots.filter(s => s.kind === 'pebble').length - 90);
+      shots = shots.filter(s => s.kind !== 'pebble' || retire-- <= 0);
+      const level = rank('rocks');
+      const spread = Math.min(1.35, .45 + (level - 1) * .12);
+      for (let i = 0; i < 30; i++) {
+        const angle = (i / 29 * 2 - 1) * spread;
+        const speed = 260 + (i % 5) * 22;
+        const shot = launchShot('pebble', e.x, e.y + 18, Math.sin(angle) * speed);
+        if (!shot) break;
+        shot.speed = Math.cos(angle) * speed;
+        shot.radius = 2; shot.life = .32 + (level - 1) * .12;
+        shot.victims.add(e);
+      }
+    }
+  } else if (e.type === 'dryTree' && !e.burning) {
+    e.burning = true; e.ignitedAt = elapsed;
+    burst(e.x, e.y, '#ff9100');
   }
 }
 function settleDomino(shot) {
@@ -671,11 +705,11 @@ function settleDomino(shot) {
   if (!entities.includes(e)) entities.push(e);
   shot.skier = null;
 }
-function downPatrol(e) {
+function downPatrol(e, points = 200) {
   if (e.hit) return;
   e.hit = true; e.fallen = true; e.speed = 0; e.latched = false; e.life = 0;
-  score += 200; health = Math.min(100, health + 5 * rank('repair'));
-  burst(e.x, e.y, '#e9b645'); toast('PATROL DOWN! +200');
+  score += points; health = Math.min(100, health + 5 * rank('repair'));
+  burst(e.x, e.y, '#e9b645'); toast(`PATROL DOWN! +${points}`);
 }
 function rescue() {
   if (rescueCharges <= 0) return false;
@@ -691,6 +725,26 @@ function helicopterUpgrades(wreck) {
     const y = board.y + board.speed * (airTime + .6) + 140;
     spawn('jump', board.x, y);
     jumpLanes.set(`encore:${elapsed}`, { x: board.x, start: world + y - board.y - 28, end: world + y - board.y + MAX_SPEED * 1.9 + 210 });
+  }
+}
+function updateGangUp(dt) {
+  if (!rank('gang')) { gangTimer = 5; return; }
+  gangTimer -= dt;
+  if (gangTimer > 0) return;
+  gangTimer += 5;
+  const count = rank('gang'), spread = Math.min(width * .35, 145);
+  for (let i = 0; i < count; i++) {
+    const x = board.x + (count === 1 ? 0 : (i / (count - 1) * 2 - 1) * spread);
+    let y = board.y + 100 + i % 3 * 24;
+    // Find a clear patch ahead instead of materializing inside a hard obstacle.
+    for (let attempt = 0; attempt < 6; attempt++) {
+      if (!entities.some(e => ['rock', 'tree', 'dryTree', 'yeti'].includes(e.type) && touchesObstacle(e, x, y))) break;
+      y += 35;
+    }
+    const rider = spawn('snowboarder', x, y);
+    rider.gangSummoned = true;
+    rider.speed = Math.max(190, board.speed + 120);
+    burst(x, y, '#dceaf0');
   }
 }
 function updateUpgradeEffects(dt, downhillSpeed, steering, brake) {
@@ -740,7 +794,14 @@ function updateUpgradeEffects(dt, downhillSpeed, steering, brake) {
       if (e.hit || shot.victims.has(e) || distance > shot.radius + 16) continue;
       shot.victims.add(e);
       if (shot.kind === 'domino') { shot.x = oldX + dx * t; shot.y = oldY + dy * t; }
-      if (!['skier', 'patrol'].includes(e.type)) { shot.life = 0; burst(shot.x, shot.y, '#aaa'); break; }
+      if (!['skier', 'patrol'].includes(e.type)) {
+        if (shot.kind === 'domino') {
+          // Leave the fallen skier on the uphill side of the obstacle.
+          shot.y = Math.min(shot.y, e.y - 20);
+          impactTerrain(e);
+        }
+        shot.life = 0; burst(shot.x, shot.y, '#aaa'); break;
+      }
       if (e.type === 'patrol') downPatrol(e);
       else {
         e.hit = true; e.airTime = 0;
@@ -823,8 +884,22 @@ function drawUpgradeEffects() {
       drawRollingSnowball(s);
     }
     else if (s.kind === 'skis') {
-      ctx.fillStyle = '#111'; ctx.fillRect(-9, -19, 8, 38); ctx.fillRect(1, -19, 8, 38);
-      ctx.fillStyle = '#e6df00'; ctx.fillRect(-7, -17, 4, 34); ctx.fillRect(3, -17, 4, 34);
+      for (const x of [-9, 1]) {
+        // Shaded sidewall, bright topsheet, and recessed bindings on each ski.
+        ctx.fillStyle = '#111'; ctx.fillRect(x, -19, 8, 38);
+        ctx.fillStyle = '#e6df00'; ctx.fillRect(x + 2, -17, 4, 34);
+        ctx.fillStyle = '#817500'; ctx.fillRect(x + 4, -15, 2, 30);
+        ctx.fillStyle = '#fff58a'; ctx.fillRect(x + 2, -17, 2, 12);
+        ctx.fillRect(x + 2, 7, 2, 8);
+        ctx.fillStyle = '#333'; ctx.fillRect(x + 2, -3, 4, 4);
+        ctx.fillRect(x + 2, 3, 4, 3);
+        ctx.fillStyle = '#aaa'; ctx.fillRect(x + 2, -3, 2, 2);
+        ctx.fillRect(x + 2, 3, 2, 1);
+      }
+    }
+    else if (s.kind === 'pebble') {
+      pixel(1, 3, '#d3d8dc', 4, 2);
+      pixel(-2, -2, '#555', 4, 4); pixel(-2, -2, '#aaa', 2, 2);
     }
     else if (s.kind === 'domino') {
       ctx.rotate(s.angle);
@@ -887,7 +962,7 @@ let jumpKind = 'ramp', hopCooldown = 0;
 // and climbs by half a point per repeat, a full point for a different score.
 let chainTime = 0, chainTotal = 0, chainMultiplier = 1, chainLastType = '';
 let multiplierFlashTime = 0, lostMultiplier = 1;
-const CHAIN_WINDOW = 2;
+const CHAIN_WINDOW = 1;
 let entities = [], particles = [], trails = [], toastTimer = 0, best = 0;
 let board = { x: 500, y: 200, vx: 0, speed: 240, edge: 0, traverse: 0, facing: 1, brakeAngle: 0 }, touch = null;
 try { best = Number(localStorage.getItem('snowfree-best')) || 0; } catch {}
@@ -1224,6 +1299,7 @@ const TREE_SHAPES = [
 function spawn(type, x = board.x + rand(-width / 2, width / 2), y = height + 40) {
   const e = { type, x, y, vx: rand(-65, 65), speed: rand(50, 110), phase: rand(0, 6.28), hit: false, life: 0 };
   if (type === 'patrol') e.speed = 60 / 3.6 * PHYSICS_UNITS_PER_METER * 3;
+  if (type === 'snowboarder') { e.speed = 190; e.vx = 0; e.airTime = 0; }
   if (type === 'snow') e.snowShape = Math.floor(Math.random() * SNOW_SHAPES.length);
   if (type === 'tree') e.treeShape = Math.floor(Math.random() * TREE_SHAPES.length);
   entities.push(e); return e;
@@ -1248,7 +1324,10 @@ function ensureTerrain() {
       const x = (cx + random()) * size, y = (cy + random()) * size, r = random();
       if (Math.hypot(x, y) < 110) continue; // Clear starting area.
       if (r >= .84 && r < .92) continue; // Leave the former stump locations clear.
-      const e = spawn(r < .40 ? 'skier' : r < .56 ? 'rock' : r < .72 ? 'snow' : r < .84 ? 'tree' : r < .95 ? 'dryTree' : 'jump', x, board.y + y - world);
+      // Keep only one roaming snowboarder, including the offscreen buffer so
+      // two natural spawns cannot later enter the viewport together.
+      if (r >= .398 && r < .40 && entities.some(e => e.type === 'snowboarder')) continue;
+      const e = spawn(r < .398 ? 'skier' : r < .40 ? 'snowboarder' : r < .56 ? 'rock' : r < .72 ? 'snow' : r < .84 ? 'tree' : r < .95 ? 'dryTree' : 'jump', x, board.y + y - world);
       e.chunk = key;
       if (e.type === 'snow') e.snowShape = Math.floor(random() * SNOW_SHAPES.length);
       if (e.type === 'tree') e.treeShape = Math.floor(random() * TREE_SHAPES.length);
@@ -1274,9 +1353,66 @@ function ensureTerrain() {
     }
     // Skiers leave their birth chunks as they move. Cull by their current position,
     // including fallen skiers, so unloading an old chunk cannot erase visible ones.
-    if (e.type === 'skier') return Math.abs(e.x - board.x) < width / 2 + margin + size && e.y > -margin - size && e.y < height + margin + size;
+    if (e.type === 'skier' || e.type === 'snowboarder') return Math.abs(e.x - board.x) < width / 2 + margin + size && e.y > -margin - size && e.y < height + margin + size;
     return !e.chunk || active.has(e.chunk);
   });
+}
+const SNOWBOARDER_FLEE_RADIUS = 220;
+function moveSnowboarder(e, dt, downhillSpeed) {
+  const distance = Math.hypot(e.x - board.x, e.y - board.y);
+  e.fleeing = distance < SNOWBOARDER_FLEE_RADIUS && e.y >= board.y;
+  const fear = clamp(1 - distance / SNOWBOARDER_FLEE_RADIUS, 0, 1);
+  const targetSpeed = 190 + fear * (board.speed + 260);
+  e.speed += (targetSpeed - e.speed) * (1 - Math.exp(-6 * dt));
+  // Within reach, escape downhill immediately rather than allowing contact.
+  if (distance < 90) e.speed = Math.max(e.speed, downhillSpeed + 180);
+  let lateral = Math.sin(elapsed * 2.8 + e.phase) * 42;
+  if (distance < 130) lateral += Math.sign(e.x - board.x || Math.sin(e.phase) || 1) * fear * 100;
+  if (!(e.airTime > 0)) {
+    const lookahead = 65 + e.speed * .35;
+    let nearest = null;
+    for (const obstacle of entities) {
+      const person = ['skier', 'patrol'].includes(obstacle.type);
+      if (person ? e.fleeing || obstacle.hit || obstacle.airTime > 0 || obstacle.dropTime > 0 : !['rock', 'tree', 'dryTree', 'yeti'].includes(obstacle.type)) continue;
+      const half = obstacle.type === 'tree' ? TREE_SHAPES[obstacle.treeShape].halfWidth * 2 : 26;
+      const dy = obstacle.oldY - e.oldY;
+      if (dy > -28 && dy < lookahead && Math.abs(obstacle.x - e.x) < half + 30 && (!nearest || dy < nearest.dy)) nearest = {obstacle, half, dy};
+    }
+    if (nearest) {
+      const {obstacle, half, dy} = nearest;
+      if (e.avoidObstacle !== obstacle) {
+        e.avoidObstacle = obstacle;
+        e.avoidSide = Math.sign(e.x - obstacle.x) || (Math.sin(e.phase) >= 0 ? 1 : -1);
+      }
+      const safeX = obstacle.x + e.avoidSide * (half + 32);
+      lateral = clamp((safeX - e.x) * 10, -480, 480);
+      // Finish the sidestep before crossing the obstacle, even at escape speed.
+      if (dy >= -28 && dy < e.speed * dt + 36) e.x = safeX;
+    } else e.avoidObstacle = null;
+    e.vx = lateral; e.x += lateral * dt;
+    e.facing = lateral >= 0 ? 1 : -1;
+  } else e.vx = 0;
+  e.y += (e.speed - downhillSpeed) * dt;
+}
+function snowboarderHits() {
+  for (const rider of entities) {
+    if (rider.type !== 'snowboarder' || rider.airTime > 0 || !rider.fleeing
+      || rider.y < board.y || Math.hypot(rider.x - board.x, rider.y - board.y) >= SNOWBOARDER_FLEE_RADIUS) continue;
+    for (const target of entities) {
+      if (!['skier', 'patrol'].includes(target.type) || target.hit || target.airTime > 0 || target.dropTime > 0) continue;
+      if (Math.hypot(target.x - board.x, target.y - board.y) >= SNOWBOARDER_FLEE_RADIUS) continue;
+      // Relative swept collision catches fast passes through moving targets.
+      const x = rider.oldX - target.oldX, y = rider.oldY - target.oldY;
+      const dx = rider.x - target.x - x, dy = rider.y - target.y - y;
+      const length = dx * dx + dy * dy;
+      const t = length ? clamp(-(x * dx + y * dy) / length, 0, 1) : 0;
+      if (Math.hypot(x + dx * t, y + dy * t) > 22) continue;
+      if (target.type === 'patrol') downPatrol(target, 0);
+      else { target.hit = true; target.airTime = 0; skierUpgrades(target); }
+      awardScore(500, '8 Ball'); toast('8 BALL! +500');
+      burst(target.x, target.y, '#00cddd');
+    }
+  }
 }
 function damage(amount, text, speedRetention = .55, obstacleType = '') {
   if (invincible > 0) return;
@@ -1311,13 +1447,15 @@ function update(dt) {
   const tuck = touch ? clamp(1 - touch.y / (height * .4), 0, 1) : Number(keys.has('arrowup') || keys.has('w'));
   const brakeInput = touch ? clamp((touch.y / height - .65) / .35, 0, 1) : Number(keys.has('arrowdown') || keys.has('s'));
   if (airTime === 0) {
+    // Lock the braking stance until released; reversing changes travel, not pose.
+    if (board.edge === 0 && brakeInput > 0) board.facing = Math.sign(steering) || board.facing;
     board.edge = brakeInput;
-    board.traverse = steering !== 0 ? brakeInput : 0;
-    if (steering !== 0) board.facing = Math.sign(steering);
+    board.traverse = steering !== 0 ? brakeInput * .5 : 0;
+    if (!brakeInput && steering !== 0) board.facing = Math.sign(steering);
   }
   const brake = board.edge;
   // Ease the visual pose without delaying the player's braking response.
-  const targetBrakeAngle = brake * board.facing * Math.PI / 2;
+  const targetBrakeAngle = brake * board.facing * (board.traverse > 0 ? Math.PI / 4 : Math.PI / 2);
   board.brakeAngle += (targetBrakeAngle - board.brakeAngle) * (1 - Math.exp(-12 * dt));
   if (Math.abs(targetBrakeAngle - board.brakeAngle) < .001) board.brakeAngle = targetBrakeAngle;
   const turn = Math.abs(board.vx) / 310;
@@ -1379,6 +1517,7 @@ function update(dt) {
   yetiTimer -= dt;
   if (yetiTimer <= 0) { spawn('yeti', board.x + rand(-width / 2, width / 2), -70); yetiTimer = rand(28, 40); toast('YETI SPOTTED. You are not alone.'); }
   let closePatrol = helicopter !== null;
+  for (const e of entities) { e.oldX = e.x; e.oldY = e.y; }
   for (const e of entities) {
     e.life += dt;
     if (e.type === 'helicopterWreck' && e.crashTime > 0) {
@@ -1410,12 +1549,14 @@ function update(dt) {
       if (e.dropTime === 0) burst(e.x, e.y, '#aaa');
       continue;
     }
-    if (e.type === 'skier') {
+    if (e.type === 'skier' || e.type === 'snowboarder') {
       const wasFlying = e.airTime > 0;
       e.airTime = Math.max(0, (e.airTime || 0) - dt);
       if (wasFlying && e.airTime === 0) burst(e.x, e.y, '#ccc');
     }
-    if ((e.type === 'patrol' || e.type === 'yeti') && !e.hit) {
+    if (e.type === 'snowboarder') {
+      moveSnowboarder(e, movementDt, downhillSpeed);
+    } else if ((e.type === 'patrol' || e.type === 'yeti') && !e.hit) {
       const isYeti = e.type === 'yeti';
       if (isYeti) {
         e.x += Math.sign(board.x - e.x) * Math.min(Math.abs(board.x - e.x) * 2, 100) * movementDt;
@@ -1483,17 +1624,9 @@ function update(dt) {
       if (!touchesObstacle(hazard, patrol.x, patrol.y)) continue;
       if (hazard.type === 'snow') { roughSnow = true; continue; }
       downPatrol(patrol);
-      if (hazard.type === 'tree' && !hazard.snowRemoved) {
-        hazard.snowRemoved = true; hazard.snowKnockedAt = elapsed;
-      } else if (hazard.type === 'rock' && !hazard.cracked) {
-        hazard.cracked = true; hazard.crackedAt = elapsed;
-      }
+      impactTerrain(hazard);
       patrol.facing = Math.sign(patrol.vx) || 1;
       burst(patrol.x, patrol.y, '#e9b645');
-      if (hazard.type === 'dryTree' && !hazard.burning) {
-        hazard.burning = true; hazard.ignitedAt = elapsed;
-        burst(hazard.x, hazard.y, '#ff9100');
-      }
       break;
     }
     if (roughSnow && !patrol.hit) {
@@ -1507,14 +1640,15 @@ function update(dt) {
   // A ramp can launch any number of skiers, independently of the player's jump.
   const ramps = entities.filter(e => e.type === 'jump');
   for (const e of entities) {
-    if (e.type !== 'skier' || e.hit || e.airTime > 0) continue;
-    const ramp = ramps.find(r => r !== e.lastRamp && Math.abs(r.x - e.x) < 27 && Math.abs(r.y - e.y) < 18);
+    if (!['skier', 'snowboarder'].includes(e.type) || e.hit || e.airTime > 0) continue;
+    const ramp = ramps.find(r => r !== e.lastRamp && Math.abs(r.x - e.x) < 27 && (Math.abs(r.y - e.y) < 18 || e.type === 'snowboarder' && r.y >= e.oldY - downhillSpeed * movementDt && r.y <= e.y));
     if (ramp) {
-      e.lastRamp = ramp; e.airDuration = 1.3 + e.speed / 110 * .5; e.airTime = e.airDuration;
+      e.lastRamp = ramp; e.airDuration = e.type === 'snowboarder' ? 1.4 : 1.3 + e.speed / 110 * .5; e.airTime = e.airDuration;
       e.moveX = 0;
       burst(e.x, e.y, '#ccc');
     }
   }
+  snowboarderHits();
   // Resolve takeoff before ground collisions, independent of entity ordering.
   if (airTime === 0) {
     const ramp = entities.find(e => e.type === 'jump' && !e.usedJump && Math.abs(e.x - board.x) < 27 && Math.abs(e.y - board.y) < 18);
@@ -1546,7 +1680,7 @@ function update(dt) {
     closePatrol = entities.some(e => e.type === 'patrol' && !e.hit && Math.hypot(e.x - board.x, e.y - board.y) < 270);
   }
   for (const e of entities) {
-    if (e.hit || e.type === 'jump' || e.type === 'helicopterWreck' || e.dropTime > 0) continue;
+    if (e.hit || e.type === 'snowboarder' || e.type === 'jump' || e.type === 'helicopterWreck' || e.dropTime > 0) continue;
     const boardFlying = airTime > 0;
     const lowHop = boardFlying && jumpKind === 'hop';
     const skierFlying = e.type === 'skier' && e.airTime > 0;
@@ -1560,7 +1694,7 @@ function update(dt) {
     if (touching) {
       if (e.type === 'skier') {
         const softLanding = wasAirborne && !boardFlying;
-        const horizontalHit = !boardFlying && board.traverse > .95 && Math.abs(board.vx) > 20;
+        const horizontalHit = !boardFlying && board.edge > .95 && board.traverse > 0 && Math.abs(board.vx) > 20;
         const groupBonus = boardFlying && flightHits > 0 ? 250 * rank('crowd') : 0;
         const basePoints = Math.round(100 * (1 + .5 * rank('glass'))) + (softLanding ? 500 : 0) + (horizontalHit ? 50 : 0) + groupBonus;
         if (boardFlying) flightHits++;
@@ -1615,6 +1749,7 @@ function update(dt) {
     heat = 0; escapeTime = 0; escapeStars = 0; helicopterRespawnAt = null;
     toast('PATROL TAKEN DOWN!');
   }
+  updateGangUp(dt);
   updateUpgradeEffects(movementDt, downhillSpeed, steering, brake);
   entities = entities.filter(e => e.chunk || (e.type === 'patrol' && !e.hit) || (e.y > -450 && e.y < height + 450 && Math.abs(e.x - board.x) < width + 500 && e.life < 40));
   ensureTerrain();
@@ -1625,6 +1760,31 @@ function update(dt) {
 // Hand-authored sprites on a two-pixel grid, with no smoothing or external assets.
 const palette = { K:'#111', G:'#008000', L:'#00bd00', Y:'#e6df00', W:'#fff', S:'#aaa', D:'#666', B:'#0000df', R:'#ed1515', P:'#a000df', F:'#ffc58a', C:'#00cddd', H:'#890b13', V:'#6200a0', O:'#817500' };
 const sprites = {
+  snowboarder: [
+    '.......KK.....', '......KYYK....', '.....KHYYFK...',
+    '.....KFFFK....', '......KFK.....',
+    '....KKGGKK....', '...KBGGGLFK...', '...KBBGGLFK...',
+    '....KBGGLK....', '.....KGGK.....', '.....KPPPK....',
+    '....KPPWPK....', '....KPWWK.....', '....KKWKK.....',
+    '.....KBBK.....', '....KBBK......', '...KBBK.......',
+    '..KBBK........', '..KKK.........'
+  ],
+  snowboarderJump: [
+    '......KK......', '.....KYYK.....', '....KHYYFK....',
+    '.KK.KFFFFK.KK.', 'KFFK.KFFK.KFFK', 'KFFK.KGGK.KFFK',
+    '.KBGKGGGGKGBK.', '..KBGGGGGGBK..', '...KBGGGLBK...',
+    '....KGGGLK....', '....KPPPPK....', '...KPPWWPK....',
+    '...KPWKWPK....', '....KWKWK.....', '...KBBBBK.....',
+    '..KBBBBK......', '.KBBBBK.......', '.KBBBK........',
+    '..KKK.........'
+  ],
+  boardDiagonal: [
+    '..KKK............', '.KYYYK...........', '.KYYYYK..........',
+    '..KYYRRK.........', '...KRRRRK........', '....KRKWKK.......',
+    '.....KKWKRK......', '......KRRRRK.....', '.......KRRRRK....',
+    '........KRKWKK...', '.........KKWKRK..', '..........KRYYK..',
+    '...........KYYYK.', '............KYYK.', '.............KK..'
+  ],
   skierJump:[
     '..........RRR..........',
     '.........HRRRH.........',
@@ -1944,6 +2104,21 @@ function drawEntity(e) {
         pixel(x + dx + px, y + dy + arcY, '#ccc');
       }
     }
+  } else if (type === 'snowboarder') {
+    const progress = e.airTime > 0 ? 1 - e.airTime / e.airDuration : 0;
+    const altitude = Math.sin(Math.PI * progress);
+    ctx.save();
+    ctx.globalAlpha = .2 - altitude * .08;
+    pixel(x - 9, y + 10, '#555', 18, 6);
+    ctx.globalAlpha = 1;
+    ctx.translate(x, y - altitude * 32);
+    const scale = 1 + altitude * .65; ctx.scale(scale, scale);
+    if (e.airTime > 0) {
+      const flip = clamp((progress - .12) / .5, 0, 1);
+      ctx.rotate(-Math.PI * 2 * flip);
+      sprite('snowboarderJump', 0, 0, 0, false, e.facing < 0);
+    } else sprite('snowboarder', 0, 0, 0, false, e.facing < 0);
+    ctx.restore();
   } else if (type === 'skier') {
     if (e.airTime > 0) {
       const altitude = Math.sin(Math.PI * (1 - e.airTime / e.airDuration));
@@ -2008,9 +2183,14 @@ function draw() {
   ctx.save(); ctx.translate(board.x, board.y - altitude * 32);
   const boardScale = 1 + altitude * .65; ctx.scale(boardScale, boardScale);
   if (invincible > 0 && Math.floor(elapsed * 12) % 2) ctx.globalAlpha = .35;
-  ctx.rotate(board.brakeAngle);
-  const visualEdge = Math.abs(board.brakeAngle) / (Math.PI / 2);
-  sprite('board', 0, 0, board.vx / 620 * (1 - visualEdge)); ctx.restore();
+  if (board.edge > .95 && board.traverse > 0) {
+    sprite('boardDiagonal', 0, 0, 0, false, board.facing > 0);
+  } else {
+    ctx.rotate(board.brakeAngle);
+    const visualEdge = Math.abs(board.brakeAngle) / (Math.PI / 2);
+    sprite('board', 0, 0, board.vx / 620 * (1 - visualEdge));
+  }
+  ctx.restore();
   for (const p of particles) { ctx.globalAlpha = p.life / .7; ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, 4, 4); } ctx.globalAlpha = 1;
   if (helicopter) drawHelicopter();
   ctx.restore();
