@@ -932,15 +932,28 @@ function updateUpgradeEffects(dt, downhillSpeed, steering, brake) {
     }
   }
   for (const bomb of bombs) {
-    if (!bomb.fresh) {
+    if (bomb.blast <= 0) continue;
+    const fresh = bomb.fresh;
+    const oldY = bomb.y;
+    const activeFraction = fresh || dt <= 0 ? 1 : Math.min(1, bomb.blast / dt);
+    if (!fresh) {
       bomb.y -= downhillSpeed * dt;
       bomb.blast = Math.max(0, bomb.blast - dt);
-      continue;
+    } else {
+      bomb.fresh = false;
+      burst(bomb.x, bomb.y, '#ff9100'); burst(bomb.x, bomb.y, '#ffe379');
     }
-    bomb.fresh = false;
-    burst(bomb.x, bomb.y, '#ff9100'); burst(bomb.x, bomb.y, '#ffe379');
     for (const e of entities) {
-      if (e.hit || e.airTime > 0 || e.dropTime > 0 || Math.hypot(e.x - bomb.x, e.y - bomb.y) > 75) continue;
+      if (!['skier', 'patrol'].includes(e.type) || e.hit || e.airTime > 0 || e.dropTime > 0) continue;
+      // Keep the whole blast dangerous while visible, including fast crossings.
+      // Fresh blasts cannot hit a target that passed before the explosion existed.
+      const x = (fresh ? e.x : e.oldX ?? e.x) - bomb.x;
+      const y = (fresh ? e.y : e.oldY ?? e.y) - (fresh ? bomb.y : oldY);
+      const dx = (e.x - bomb.x - x) * activeFraction;
+      const dy = (e.y - bomb.y - y) * activeFraction;
+      const length = dx * dx + dy * dy;
+      const t = length ? clamp(-(x * dx + y * dy) / length, 0, 1) : 0;
+      if (Math.hypot(x + dx * t, y + dy * t) > 75) continue;
       if (e.type === 'patrol') downPatrol(e);
       else if (e.type === 'skier') {
         e.hit = true; e.airTime = 0;
