@@ -2110,7 +2110,7 @@ function update(dt) {
           e.burning = true; e.ignitedAt = elapsed;
           burst(e.x, e.y, '#ff9100');
         }
-        damage(e.type === 'yeti' ? 20 : 7.5, e.type === 'yeti' ? 'YETI ATTACK! −20 condition' : e.type === 'dryTree' ? 'TREE IGNITED! −8 condition' : 'OBSTACLE! −8 condition', e.type === 'rock' ? .5 : .55, e.type);
+        damage(e.type === 'yeti' ? 20 : 10, e.type === 'yeti' ? 'YETI ATTACK! −20 condition' : e.type === 'dryTree' ? 'TREE IGNITED! −10 condition' : 'OBSTACLE! −10 condition', e.type === 'rock' ? .5 : .55, e.type);
       }
     }
   }
