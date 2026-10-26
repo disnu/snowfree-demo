@@ -1556,7 +1556,7 @@ function quitRun() {
 function end(reason = 'crash') {
   if (rescue()) return;
   gameAudio.hush();
-  bankChain(); ui.scoreReadout.hidden = true;
+  bankChain(); ui.scoreReadout.hidden = true; ui.armorStatus.hidden = true;
   mode = 'over'; best = Math.max(best, Math.floor(score));
   try { localStorage.setItem('snowfree-best', String(best)); } catch {}
   ui.best.textContent = best.toLocaleString(); ui.overlay.hidden = false;
