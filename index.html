@@ -24,6 +24,16 @@
 .pause-panel button { min-height: 48px; }
 .powers-panel { width: min(680px, 100%); max-height: 100%; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
 .powers-panel h2 { margin: 0; }
+.help-panel { width: min(760px, 100%); }
+#helpContent { overflow-y: auto; min-height: 0; padding: 4px 14px 4px 4px; text-align: left; font-size: 10px; line-height: 2; }
+#helpContent section + section { margin-top: 22px; }
+#helpContent h3 { color: #e8ee75; font-size: 12px; margin: 0 0 10px; }
+#helpContent p { margin: 8px 0; color: #c7d7ee; }
+#helpContent ul { padding-left: 22px; }
+#helpContent li { margin-bottom: 10px; }
+#helpContent strong { color: #fff7ea; }
+.menu-actions { position: relative; z-index: 1; display: flex; gap: 12px; margin-top: 16px; }
+main:has(#overlay:not([hidden])) > footer, main:has(#helpPopup:not([hidden])) > footer { visibility: hidden; }
 .powers-panel > p { font-size: 9px; line-height: 1.8; margin: 0; color: #a8b9d9; }
 #powersList { overflow-y: auto; min-height: 0; overscroll-behavior: contain; padding: 4px 8px 4px 4px; }
 .power-entry { border: 2px solid #485e83; padding: 16px; margin-bottom: 12px; background: #121d35; }
@@ -369,6 +379,48 @@ footer { height: 33px; display: flex; align-items: center; justify-content: spac
         <button id="closeCheats" type="button">BACK</button>
       </form>
     </section>
+    <section id="helpPopup" class="pause-layer" role="dialog" aria-modal="true" aria-labelledby="helpTitle" hidden>
+      <div class="powers-panel help-panel">
+        <h2 id="helpTitle">HOW TO PLAY</h2>
+        <div id="helpContent" tabindex="0" aria-label="How to play instructions">
+          <section>
+            <h3>BOARD GONE ROGUE</h3>
+            <p>You control a loose snowboard. Knock down skiers, build your score, and survive as long as you can. Select NORMAL or POWER on the start screen to begin.</p>
+          </section>
+          <section>
+            <h3>CONTROLS</h3>
+            <ul>
+              <li><strong>← → / A D:</strong> steer left and right.</li>
+              <li><strong>↑ / W:</strong> tuck to gain speed. <strong>↓ / S:</strong> brake.</li>
+              <li><strong>Brake + left/right:</strong> slide sideways and slow down.</li>
+              <li><strong>Space / left-click:</strong> small hop. Rainbow ramps launch you higher.</li>
+              <li><strong>P:</strong> pause or resume. The pause menu includes sound settings and your powers.</li>
+            </ul>
+            <p>Straight downhill builds speed. Gentle turns keep momentum.</p>
+          </section>
+          <section>
+            <h3>SCORE BIG</h3>
+            <p>Each skier is worth 100 base points. Speed boosts scoring up to 2.5×. Keep scoring to build your Vengeance chain; it banks after a short gap. Herd fleeing snowboarders into people for 8 Ball bonuses.</p>
+          </section>
+          <section>
+            <h3>SURVIVE THE MOUNTAIN</h3>
+            <p>Dodge rocks and trees, avoid rough snow that slows you down, and stay away from the yeti. Impacts damage board health and break your multiplier. At 0% health, the run ends.</p>
+            <p>Patrol chases you as your wanted level rises. Keep moving, lose pursuers, or knock them down with obstacles and powers. Attached patrol slows you down and can capture you.</p>
+            <p>Armor absorbs damage before board health: a 10-damage hit uses 5 armor and removes 5% health if you have 5 armor.</p>
+          </section>
+          <section>
+            <h3>GAME MODES</h3>
+            <p>NORMAL is classic survival without powers. Knock down a helicopter in Normal to unlock POWER. In Power mode, earning score offers upgrades; choose a card with 1, 2, 3, or a click. Review collected powers from the pause menu.</p>
+            <p id="modeHint" role="status">Normal: no powers. Knock down a helicopter to unlock Power.</p>
+          </section>
+          <section>
+            <h3>AFTER YOUR RUN</h3>
+            <p>Your score appears on the Pixel News results screen. Choose QUIT to return to the start screen. Enter your name and use SAVE SCORE to submit to the online leaderboard.</p>
+          </section>
+        </div>
+        <button id="closeHelp" type="button">BACK</button>
+      </div>
+    </section>
     <div id="overlay">
       <div class="menu-art-clip" aria-hidden="true">
         <div class="menu-art-frame">
@@ -383,12 +435,10 @@ footer { height: 33px; display: flex; align-items: center; justify-content: spac
       </div>
       <div class="eyebrow">NO RIDER. NO RULES.</div>
       <h1>A loose board.<br>A mountain of trouble.</h1>
-      <p>Flatten skiers. Dodge rocks and rough snow. Lose the patrol.<br>And whatever you do, keep away from the yeti.</p>
       <div class="mode-picker" role="group" aria-label="Game mode">
         <button id="normalMode" type="button" aria-pressed="true">NORMAL</button>
         <button id="powerMode" type="button" aria-pressed="false" aria-describedby="modeHint" disabled>POWER · LOCKED</button>
       </div>
-      <small id="modeHint" role="status">Normal: no powers. Knock down a helicopter to unlock Power.</small>
       <aside id="leaderboard" class="leaderboard" aria-labelledby="lbTitle">
         <div class="lb-head">
           <h2 id="lbTitle">ONLINE TOP 10</h2>
@@ -404,8 +454,10 @@ footer { height: 33px; display: flex; align-items: center; justify-content: spac
         </form>
         <ol id="lbList"></ol>
       </aside>
-      <button id="viewCheats" type="button">CHEATS</button>
-      <small>Straight downhill builds speed. Gentle turns keep momentum.<br>← → / A D steer · ↑ / W tuck · ↓ / S brake · P pause<br>Brake + left/right: slide sideways and slow down.<br>Space / left-click / tap: small hop.<br>Touch: drag to steer, hold higher to go faster.</small>
+      <div class="menu-actions">
+        <button id="viewHelp" type="button" aria-haspopup="dialog" aria-controls="helpPopup">HELP</button>
+        <button id="viewCheats" type="button">CHEATS</button>
+      </div>
     </div>
     <section id="resultsScreen" class="results-layer" role="dialog" aria-modal="true" aria-labelledby="resultsTitle" aria-describedby="resultsSummary" hidden>
       <div class="results-panel">
@@ -1135,7 +1187,8 @@ const menuUI = {
   clip: document.querySelector('.menu-art-clip'),
   frame: document.querySelector('.menu-art-frame')
 };
-const titleContent = { eyebrow: ui.overlay.querySelector('.eyebrow').textContent, heading: ui.overlay.querySelector('h1').innerHTML, description: ui.overlay.querySelector('p').innerHTML };
+const titleContent = { eyebrow: ui.overlay.querySelector('.eyebrow').textContent, heading: ui.overlay.querySelector('h1').innerHTML };
+const helpUI = Object.fromEntries(['helpPopup', 'helpContent', 'viewHelp', 'closeHelp'].map(id => [id, document.getElementById(id)]));
 function layoutMenuArt() {
   if (!menuUI.clip || !menuUI.frame) return;
   const clipWidth = menuUI.clip.clientWidth, clipHeight = menuUI.clip.clientHeight;
@@ -1593,6 +1646,7 @@ function togglePause() {
   toast(mode === 'paused' ? 'PAUSED — press P or Resume' : 'BACK ON THE SLOPE');
 }
 function closePauseMenus() {
+  helpUI.helpPopup.hidden = true;
   pauseUI.pauseMenu.hidden = true;
   pauseUI.powersPopup.hidden = true;
   pauseUI.soundPopup.hidden = true;
@@ -1604,6 +1658,18 @@ function showCheats() {
   ui.overlay.hidden = true;
   pauseUI.cheatCode.value = ''; pauseUI.cheatResult.textContent = '';
   pauseUI.cheatCode.focus({ preventScroll: true });
+}
+function showHelp() {
+  if (mode !== 'ready' || ui.overlay.hidden) return;
+  closePauseMenus(); keys.clear(); touch = null;
+  ui.overlay.hidden = true; helpUI.helpPopup.hidden = false;
+  helpUI.helpContent.scrollTop = 0;
+  helpUI.helpContent.focus({ preventScroll: true });
+}
+function closeHelp() {
+  helpUI.helpPopup.hidden = true; ui.overlay.hidden = false;
+  layoutMenuArt();
+  helpUI.viewHelp.focus({ preventScroll: true });
 }
 function closeCheats() {
   pauseUI.cheatsPopup.hidden = true; ui.overlay.hidden = false;
@@ -1648,7 +1714,6 @@ function returnToMenu() {
   ui.pause.textContent = 'Pause · P'; toastTimer = 0;
   ui.overlay.querySelector('.eyebrow').textContent = titleContent.eyebrow;
   ui.overlay.querySelector('h1').innerHTML = titleContent.heading;
-  ui.overlay.querySelector('p').innerHTML = titleContent.description;
   updateModePicker();
   layoutMenuArt();
   document.getElementById('normalMode').focus({ preventScroll: true });
@@ -1698,6 +1763,8 @@ pauseUI.viewSound.addEventListener('click', showSound);
 pauseUI.closeSound.addEventListener('click', backToPause);
 pauseUI.viewCheats.addEventListener('click', showCheats);
 pauseUI.closeCheats.addEventListener('click', closeCheats);
+helpUI.viewHelp.addEventListener('click', showHelp);
+helpUI.closeHelp.addEventListener('click', closeHelp);
 pauseUI.cheatForm.addEventListener('submit', e => {
   e.preventDefault();
   if ((mode !== 'ready' && mode !== 'over') || pauseUI.cheatsPopup.hidden) return;
@@ -1713,6 +1780,15 @@ pauseUI.quitRun.addEventListener('click', quitRun);
 resultsUI.quit.addEventListener('click', quitResults);
 window.addEventListener('keydown', e => {
   gameAudio.unlock();
+  if (!helpUI.helpPopup.hidden) {
+    if (e.key === 'Escape') { e.preventDefault(); closeHelp(); }
+    else if (e.key === 'Tab') {
+      const controls = [helpUI.helpContent, helpUI.closeHelp];
+      e.preventDefault();
+      controls[(controls.indexOf(document.activeElement) + (e.shiftKey ? -1 : 1) + controls.length) % controls.length].focus();
+    }
+    return;
+  }
   if (!pauseUI.cheatsPopup.hidden) {
     if (e.key === 'Escape') { e.preventDefault(); closeCheats(); }
     else if (e.key === 'Tab') {
