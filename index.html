@@ -32,7 +32,8 @@
 #helpContent ul { padding-left: 22px; }
 #helpContent li { margin-bottom: 10px; }
 #helpContent strong { color: #fff7ea; }
-.menu-actions { position: relative; z-index: 1; display: flex; gap: 12px; margin-top: 16px; }
+.menu-actions { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 16px; }
+.menu-actions button { width: 140px; min-height: 44px; font-size: 9px; }
 main:has(#overlay:not([hidden])) > footer, main:has(#helpPopup:not([hidden])) > footer { visibility: hidden; }
 .powers-panel > p { font-size: 9px; line-height: 1.8; margin: 0; color: #a8b9d9; }
 #powersList { overflow-y: auto; min-height: 0; overscroll-behavior: contain; padding: 4px 8px 4px 4px; }
@@ -198,7 +199,9 @@ p { font-size: 9px; line-height: 2.3; color: #7b8799; max-width: 640px; margin: 
   #lbName, #lbSave { min-height: 40px; }
 }
 .mode-picker { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin: 12px 0; }
-.mode-picker button[aria-pressed="true"] { color: #172442; background: #e8ee74; border-color: #172442; }
+.mode-picker button { width: 230px; min-height: 68px; font-size: 12px; color: #fff; background: #b52b35; border-color: #f16a70; }
+.mode-picker button[aria-pressed="true"] { color: #fff; background: #b52b35; border-color: #f16a70; }
+.mode-picker button:hover:not(:disabled) { background: #d33b45; border-color: #ff9499; }
 .mode-picker button:disabled { cursor: not-allowed; opacity: .5; }
 #overlay #modeHint { max-width: 540px; color: #d9e8ff; text-shadow: 1px 1px 0 #071022; margin-bottom: 16px; }
 .results-layer { position: absolute; inset: 0; z-index: 30; display: grid; place-items: center; padding: 12px; overflow: auto; background: radial-gradient(circle at 50% 18%, #1b2a4a 0, #080f25 68%); color: #e9efff; }
@@ -439,6 +442,10 @@ footer { height: 33px; display: flex; align-items: center; justify-content: spac
         <button id="normalMode" type="button" aria-pressed="true">NORMAL</button>
         <button id="powerMode" type="button" aria-pressed="false" aria-describedby="modeHint" disabled>POWER · LOCKED</button>
       </div>
+      <div class="menu-actions">
+        <button id="viewHelp" type="button" aria-haspopup="dialog" aria-controls="helpPopup">HELP</button>
+        <button id="viewCheats" type="button">CHEATS</button>
+      </div>
       <aside id="leaderboard" class="leaderboard" aria-labelledby="lbTitle">
         <div class="lb-head">
           <h2 id="lbTitle">ONLINE TOP 10</h2>
@@ -454,10 +461,6 @@ footer { height: 33px; display: flex; align-items: center; justify-content: spac
         </form>
         <ol id="lbList"></ol>
       </aside>
-      <div class="menu-actions">
-        <button id="viewHelp" type="button" aria-haspopup="dialog" aria-controls="helpPopup">HELP</button>
-        <button id="viewCheats" type="button">CHEATS</button>
-      </div>
     </div>
     <section id="resultsScreen" class="results-layer" role="dialog" aria-modal="true" aria-labelledby="resultsTitle" aria-describedby="resultsSummary" hidden>
       <div class="results-panel">
