@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>SnowFree — Board Gone Rogue</title><style>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>SnowFree — Board Gone Rogue</title><style>
 @font-face {
   font-family: 'Press Start 2P';
   font-style: normal;
@@ -75,8 +75,11 @@
 }
 @media (prefers-reduced-motion: reduce) {
   #upgradeOverlay, .upgrade-card, .upgrade-card.chosen, .upgrade-card.dismissed { animation-duration: .01ms; animation-delay: 0ms; }
+  .lb-row.fresh { animation-duration: .01ms; }
 }
 body { margin: 0; }
+button { touch-action: manipulation; }
+#mobileControls { display: none; }
 strong, b { font-weight: 400; }
 header { height: 58px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #39435c; }
 header a { color: #f2f4ff; text-decoration: none; font-size: 17px; letter-spacing: -1px; }
@@ -129,6 +132,37 @@ h1 { color: #293c60; font-size: clamp(19px, 2.8vw, 34px); line-height: 1.6; marg
 p { font-size: 9px; line-height: 2.3; color: #7b8799; max-width: 640px; margin: 0 0 18px; }
 #start { background: #e6eb89; color: #24334a; border-color: #24334a; padding: 15px 22px; font-size: 11px; margin: 10px 0 22px; }
 #overlay small { font-size: 7px; line-height: 2.6; color: #8190a0; }
+.leaderboard { position: absolute; z-index: 2; top: 14px; right: 14px; width: 238px; padding: 12px; text-align: left; color: #e4ecff; background: #101a2e; border: 2px solid #3c5176; box-shadow: 4px 4px 0 #0a1120; }
+.lb-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.lb-head h2 { margin: 0; font-size: 9px; line-height: 1.6; letter-spacing: 1px; color: #e8ee74; }
+#lbRefresh { width: 22px; height: 22px; min-height: 0; padding: 0; font-size: 10px; line-height: 1; box-shadow: 2px 2px 0 #070e1d; }
+#lbForm label { display: block; margin-bottom: 5px; font-size: 6px; letter-spacing: 1px; color: #90b6ed; }
+.lb-entry { display: flex; gap: 6px; }
+#lbName { flex: 1; min-width: 0; width: 100%; padding: 7px 6px; font: inherit; font-size: 8px; color: #fff; background: #0a1429; border: 2px solid #485e83; border-radius: 0; text-transform: uppercase; }
+#lbName::placeholder { color: #5e7296; }
+#lbSave { flex: 0 0 auto; min-height: 32px; padding: 6px 7px; font-size: 6px; box-shadow: 2px 2px 0 #070e1d; }
+.lb-status { margin: 6px 0 0; min-height: 11px; font-size: 6px; line-height: 1.7; color: #90b6ed; }
+.lb-status.error { color: #ff9b8d; }
+.lb-status.good { color: #e8ee74; }
+#lbList { max-height: 154px; margin: 8px 0 0; padding: 0; overflow-y: auto; overscroll-behavior: contain; list-style: none; }
+.lb-row { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 6px; align-items: baseline; padding: 3px 2px; border-bottom: 1px dashed #26344d; font-size: 7px; line-height: 1.75; }
+.lb-row:last-child { border-bottom: 0; }
+.lb-rank { color: #8392ab; }
+.lb-name { overflow: hidden; color: #dbe6ff; text-overflow: ellipsis; white-space: nowrap; text-transform: uppercase; }
+.lb-score { color: #e8ee74; }
+.lb-row.you .lb-rank, .lb-row.you .lb-name { color: #e8ee74; }
+.lb-row.fresh { animation: lb-flash 1.6s ease-out; }
+.lb-empty { padding: 10px 0; font-size: 6px; line-height: 1.9; color: #7f93b8; }
+@keyframes lb-flash { 0%, 25% { background: #33446a; } 100% { background: transparent; } }
+@media (max-width: 1280px) {
+  .leaderboard { position: static; width: min(420px, 100%); margin: 8px auto 4px; }
+}
+@media (max-width: 700px) {
+  .leaderboard { width: min(360px, 100%); padding: 10px; }
+  .lb-head h2 { font-size: 8px; }
+  #lbList { max-height: 104px; }
+  #lbName, #lbSave { min-height: 40px; }
+}
 .mode-picker { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin: 12px 0; }
 .mode-picker button[aria-pressed="true"] { color: #172442; background: #e8ee74; border-color: #172442; }
 .mode-picker button:disabled { cursor: not-allowed; opacity: .5; }
@@ -168,6 +202,52 @@ footer { height: 33px; display: flex; align-items: center; justify-content: spac
   #overlay small { font-size: 6px; line-height: 2.4; }
   p { font-size: 8px; }
 }
+@media (pointer: coarse), (max-width: 700px) {
+  body { height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+  header { flex: 0 0 48px; height: 48px; padding: 0 8px; }
+  header a small { display: none; }
+  #pause { min-height: 44px; }
+  main { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 0; }
+  .mountain { flex: 1; min-height: 0; height: auto; }
+  footer { display: none; }
+  #mobileControls { position: absolute; z-index: 4; bottom: 10px; left: 8px; right: 8px; display: flex; justify-content: space-between; align-items: flex-end; gap: 8px; pointer-events: none; }
+  .mobile-steering, .mobile-actions { display: flex; gap: 6px; }
+  .mobile-actions { flex-wrap: wrap; justify-content: flex-end; max-width: 180px; }
+  #mobileControls button { pointer-events: auto; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; min-width: 48px; min-height: 54px; padding: 8px; font-size: 8px; background: #26334ce6; }
+  #mobileControls button.held { background: #e8ee74; color: #172442; border-color: #172442; }
+  .score-hud { top: 10px; left: 10px; width: 125px; }
+  .condition-label { margin-top: 8px; }
+  .speedometer { top: 10px; right: 10px; width: 105px; }
+  .run-clock { top: 112px; left: auto; right: 10px; transform: none; }
+  .run-clock small { display: none; }
+  #message { top: 150px; font-size: 10px; }
+  .score-readout { bottom: 82px; }
+  .score-readout > div { font-size: 20px; }
+  .score-readout small { margin-bottom: 6px; }
+  .score-underline, .slope-label { display: none; }
+  #overlay { justify-content: flex-start; padding: 16px; }
+  #overlay > :first-child { margin-top: auto; }
+  #overlay > :last-child { margin-bottom: auto; }
+  #overlay > * { flex-shrink: 0; }
+  .mode-picker button, #viewCheats, #closeCheats { min-height: 44px; }
+  .pause-layer { padding: 12px; overflow-y: auto; }
+  .pause-panel { gap: 8px; margin: auto; }
+  .pause-panel h2 { margin: 8px 0; font-size: 18px; }
+}
+@media (max-height: 500px) and (pointer: coarse) {
+  header { flex-basis: 44px; height: 44px; }
+  .personal-best, .distance-value, .speed-track, .hud-label { display: none; }
+  .score-hud { width: 110px; }
+  #score, #speed { font-size: 18px; }
+  .condition-label { margin: 5px 0; }
+  .condition-track { height: 6px; }
+  #wanted { margin-top: 2px; }
+  .run-clock { top: 72px; }
+  #message { top: 10px; max-width: 45%; font-size: 9px; }
+  .score-readout { bottom: 14px; max-width: 40%; }
+  .score-readout > div { font-size: 16px; gap: 10px; }
+  .score-readout small { font-size: 5px; }
+}
 
 </style></head>
 <body>
@@ -175,6 +255,17 @@ footer { height: 33px; display: flex; align-items: center; justify-content: spac
 <main>
   <div class="mountain">
     <canvas id="game" aria-label="SnowFree downhill snowboarding game"></canvas>
+    <nav id="mobileControls" aria-label="Touch game controls" hidden>
+      <div class="mobile-steering">
+        <button type="button" data-control="a" aria-label="Steer left">◀</button>
+        <button type="button" data-control="d" aria-label="Steer right">▶</button>
+      </div>
+      <div class="mobile-actions">
+        <button type="button" data-control="w" aria-label="Accelerate">FAST</button>
+        <button type="button" data-control="s" aria-label="Brake">BRAKE</button>
+        <button type="button" data-control="hop" aria-label="Jump">HOP</button>
+      </div>
+    </nav>
     <section class="score-hud" aria-label="Score and board status">
       <div class="hud-label">SCORE</div><strong id="score">0</strong>
       <div class="condition-label"><span>BOARD</span><span id="health">100%</span></div>
@@ -248,6 +339,21 @@ footer { height: 33px; display: flex; align-items: center; justify-content: spac
         <button id="powerMode" type="button" aria-pressed="false" aria-describedby="modeHint" disabled>POWER · LOCKED</button>
       </div>
       <small id="modeHint" role="status">Normal: no powers. Knock down a helicopter to unlock Power.</small>
+      <aside id="leaderboard" class="leaderboard" aria-labelledby="lbTitle">
+        <div class="lb-head">
+          <h2 id="lbTitle">ONLINE TOP 10</h2>
+          <button id="lbRefresh" type="button" aria-label="Refresh online leaderboard" title="Refresh">↻</button>
+        </div>
+        <form id="lbForm">
+          <label for="lbName">YOUR NAME</label>
+          <div class="lb-entry">
+            <input id="lbName" type="text" maxlength="12" autocomplete="nickname" spellcheck="false" placeholder="NAME">
+            <button id="lbSave" type="submit">SAVE SCORE</button>
+          </div>
+          <p id="lbStatus" class="lb-status" role="status" aria-live="polite">SYNCING…</p>
+        </form>
+        <ol id="lbList"></ol>
+      </aside>
       <button id="viewCheats" type="button">CHEATS</button>
       <small>Straight downhill builds speed. Gentle turns keep momentum.<br>← → / A D steer · ↑ / W tuck · ↓ / S brake · P pause<br>Brake + left/right: slide sideways and slow down.<br>Space / left-click / tap: small hop.<br>Touch: drag to steer, hold higher to go faster.</small>
     </div>
@@ -884,17 +990,15 @@ function drawUpgradeEffects() {
       drawRollingSnowball(s);
     }
     else if (s.kind === 'skis') {
-      for (const x of [-9, 1]) {
-        // Shaded sidewall, bright topsheet, and recessed bindings on each ski.
-        ctx.fillStyle = '#111'; ctx.fillRect(x, -19, 8, 38);
-        ctx.fillStyle = '#e6df00'; ctx.fillRect(x + 2, -17, 4, 34);
-        ctx.fillStyle = '#817500'; ctx.fillRect(x + 4, -15, 2, 30);
-        ctx.fillStyle = '#fff58a'; ctx.fillRect(x + 2, -17, 2, 12);
-        ctx.fillRect(x + 2, 7, 2, 8);
-        ctx.fillStyle = '#333'; ctx.fillRect(x + 2, -3, 4, 4);
-        ctx.fillRect(x + 2, 3, 4, 3);
-        ctx.fillStyle = '#aaa'; ctx.fillRect(x + 2, -3, 2, 2);
-        ctx.fillRect(x + 2, 3, 2, 1);
+      for (const x of [-6, 2]) {
+        // Thin skier-style ski: dark edges, a narrow yellow topsheet, and bindings.
+        ctx.fillStyle = '#151515'; ctx.fillRect(x, -19, 4, 38);
+        ctx.fillStyle = '#e6df00'; ctx.fillRect(x + 1, -17, 2, 34);
+        ctx.fillStyle = '#fff58a'; ctx.fillRect(x + 1, -17, 1, 9);
+        ctx.fillStyle = '#817500'; ctx.fillRect(x + 2, -8, 1, 24);
+        ctx.fillStyle = '#333'; ctx.fillRect(x + 1, -3, 2, 5);
+        ctx.fillStyle = '#aaa'; ctx.fillRect(x + 1, -3, 1, 1);
+        ctx.fillStyle = '#5a5200'; ctx.fillRect(x + 1, 4, 2, 1);
       }
     }
     else if (s.kind === 'pebble') {
@@ -938,6 +1042,224 @@ const ui = Object.fromEntries(['score', 'wanted', 'health', 'healthFill', 'patro
 const keys = new Set();
 const pauseUI = Object.fromEntries(['pauseMenu', 'resumeRun', 'viewPowers', 'viewSound', 'viewCheats', 'quitRun', 'powersPopup', 'powersList', 'closePowers', 'soundPopup', 'closeSound', 'cheatsPopup', 'cheatForm', 'cheatCode', 'cheatResult', 'closeCheats'].map(id => [id, document.getElementById(id)]));
 const titleContent = { eyebrow: ui.overlay.querySelector('.eyebrow').textContent, heading: ui.overlay.querySelector('h1').innerHTML, description: ui.overlay.querySelector('p').innerHTML };
+const LEADERBOARD_URL = 'https://mantledb.sh/v2/snowfree-leaderboard-disnu/scores';
+const LEADERBOARD_CACHE_KEY = 'snowfree-leaderboard-cache';
+const PLAYER_NAME_KEY = 'snowfree-name';
+const LEADERBOARD_KEEP = 20, LEADERBOARD_SHOW = 10;
+const lbUI = {
+  form: document.getElementById('lbForm'),
+  name: document.getElementById('lbName'),
+  save: document.getElementById('lbSave'),
+  status: document.getElementById('lbStatus'),
+  list: document.getElementById('lbList'),
+  refresh: document.getElementById('lbRefresh')
+};
+let onlineScores = [], onlineStatus = 'SYNCING…', onlineStatusTone = '';
+let playerName = '', pendingScore = 0, pendingMode = 'normal';
+let scoreSubmitting = false, queuedScore = null, leaderboardLoading = false;
+let leaderboardVersion = 0;
+let lastSubmittedKey = '', freshUntil = 0;
+function cleanPlayerName(value) {
+  const cleaned = String(value ?? '')
+    .replace(/[^\p{L}\p{N} _-]/gu, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return Array.from(cleaned).slice(0, 12).join('').trim();
+}
+function formatScore(value) { return Math.max(0, Math.floor(value)).toLocaleString(); }
+function normalizeScores(data) {
+  const raw = Array.isArray(data) ? data : data && Array.isArray(data.scores) ? data.scores : [];
+  const byName = new Map();
+  for (const item of raw) {
+    if (!item || typeof item !== 'object') continue;
+    const name = cleanPlayerName(item.name);
+    const value = Math.floor(Number(item.score));
+    if (!name || !Number.isFinite(value) || value < 0 || value > 999999999) continue;
+    const entry = {
+      name,
+      score: value,
+      mode: item.mode === 'power' ? 'power' : 'normal',
+      at: Number.isFinite(Number(item.at)) ? Math.max(0, Number(item.at)) : 0
+    };
+    const key = name.toLocaleLowerCase();
+    const old = byName.get(key);
+    if (!old || entry.score > old.score) byName.set(key, entry);
+  }
+  return [...byName.values()].sort((a, b) => b.score - a.score || a.at - b.at).slice(0, LEADERBOARD_KEEP);
+}
+function mergeScore(scores, entry) {
+  const merged = scores.map(item => ({ ...item }));
+  const index = merged.findIndex(item => item.name.toLocaleLowerCase() === entry.name.toLocaleLowerCase());
+  if (index < 0) merged.push(entry);
+  else if (entry.score > merged[index].score) merged[index] = entry;
+  return merged.sort((a, b) => b.score - a.score || a.at - b.at).slice(0, LEADERBOARD_KEEP);
+}
+function readScoreCache() {
+  try { return normalizeScores(JSON.parse(localStorage.getItem(LEADERBOARD_CACHE_KEY) || '[]')); } catch { return []; }
+}
+function cacheScores() {
+  try { localStorage.setItem(LEADERBOARD_CACHE_KEY, JSON.stringify(onlineScores)); } catch {}
+}
+function renderLeaderboardStatus() {
+  lbUI.status.textContent = onlineStatus;
+  lbUI.status.classList.toggle('error', onlineStatusTone === 'error');
+  lbUI.status.classList.toggle('good', onlineStatusTone === 'good');
+  lbUI.save.textContent = pendingScore > 0 ? 'SAVE SCORE' : 'SAVE NAME';
+  lbUI.save.title = pendingScore > 0 ? `Save ${formatScore(pendingScore)} points` : 'Save your name for the online leaderboard';
+}
+function renderLeaderboard() {
+  const top = onlineScores.slice(0, LEADERBOARD_SHOW);
+  lbUI.list.replaceChildren();
+  if (!top.length) {
+    const empty = document.createElement('li');
+    empty.className = 'lb-empty';
+    empty.textContent = 'NO SCORES YET — BE THE FIRST.';
+    lbUI.list.append(empty);
+  } else {
+    const ownName = playerName.toLocaleLowerCase();
+    top.forEach((entry, index) => {
+      const row = document.createElement('li');
+      row.className = 'lb-row';
+      const key = `${entry.name.toLocaleLowerCase()}|${entry.score}`;
+      if (ownName && entry.name.toLocaleLowerCase() === ownName) row.classList.add('you');
+      if (key === lastSubmittedKey && Date.now() < freshUntil) row.classList.add('fresh');
+      const rank = document.createElement('span'); rank.className = 'lb-rank'; rank.textContent = String(index + 1).padStart(2, '0');
+      const name = document.createElement('span'); name.className = 'lb-name'; name.textContent = entry.name;
+      const points = document.createElement('span'); points.className = 'lb-score'; points.textContent = formatScore(entry.score);
+      row.append(rank, name, points);
+      lbUI.list.append(row);
+    });
+  }
+  renderLeaderboardStatus();
+}
+function setLeaderboardStatus(text, tone = '') {
+  onlineStatus = text; onlineStatusTone = tone; renderLeaderboardStatus();
+}
+function savePlayerName(name) {
+  const cleaned = cleanPlayerName(name);
+  if (!cleaned) return false;
+  playerName = cleaned; lbUI.name.value = cleaned;
+  try { localStorage.setItem(PLAYER_NAME_KEY, cleaned); } catch {}
+  renderLeaderboard();
+  return true;
+}
+async function leaderboardRequest(url, options = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 9000);
+  try {
+    return await fetch(url, { ...options, cache: 'no-store', signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+async function readRemoteScores() {
+  const response = await leaderboardRequest(`${LEADERBOARD_URL}?v=${Date.now()}`);
+  if (response.status === 404) return [];
+  if (!response.ok) throw new Error(`Leaderboard read failed (${response.status})`);
+  return normalizeScores(await response.json());
+}
+async function loadLeaderboard({ announce = true } = {}) {
+  if (leaderboardLoading) return;
+  leaderboardLoading = true;
+  const version = leaderboardVersion;
+  if (announce) setLeaderboardStatus('SYNCING…');
+  try {
+    const scores = await readRemoteScores();
+    if (version !== leaderboardVersion) return;
+    onlineScores = scores;
+    cacheScores();
+    setLeaderboardStatus(onlineScores.length ? 'LIVE · TOP 10' : 'LIVE · NO SCORES YET', 'good');
+  } catch {
+    if (version !== leaderboardVersion) return;
+    setLeaderboardStatus(onlineScores.length ? 'OFFLINE · SAVED SCORES' : 'OFFLINE · NO CONNECTION', 'error');
+  } finally {
+    leaderboardLoading = false;
+    renderLeaderboard();
+  }
+}
+async function submitOnlineScore(entry, { auto = false } = {}) {
+  if (scoreSubmitting) {
+    queuedScore = entry;
+    setLeaderboardStatus(`RUN ${formatScore(entry.score)} PTS · QUEUED`);
+    return false;
+  }
+  scoreSubmitting = true;
+  setLeaderboardStatus(`${auto ? 'RUN' : 'SAVING'} ${formatScore(entry.score)} PTS · SAVING…`);
+  try {
+    const remote = await readRemoteScores();
+    const merged = mergeScore(remote, entry);
+    const response = await leaderboardRequest(LEADERBOARD_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(merged)
+    });
+    if (!response.ok) throw new Error(`Leaderboard save failed (${response.status})`);
+    const payload = await response.json().catch(() => null);
+    if (payload && payload.success === false) throw new Error(payload.error || 'Leaderboard rejected the score');
+    leaderboardVersion++;
+    onlineScores = merged; cacheScores();
+    pendingScore = 0;
+    lastSubmittedKey = `${entry.name.toLocaleLowerCase()}|${entry.score}`;
+    freshUntil = Date.now() + 1600;
+    setLeaderboardStatus(`SAVED · ${entry.name} · ${formatScore(entry.score)}`, 'good');
+    return true;
+  } catch {
+    if (pendingScore === 0) { pendingScore = entry.score; pendingMode = entry.mode; }
+    setLeaderboardStatus('COULD NOT SAVE · PRESS SAVE TO RETRY', 'error');
+    return false;
+  } finally {
+    scoreSubmitting = false;
+    renderLeaderboard();
+    if (queuedScore) {
+      const next = queuedScore; queuedScore = null;
+      submitOnlineScore(next, { auto: true });
+    }
+  }
+}
+function finishLeaderboardRun() {
+  pendingScore = Math.max(0, Math.floor(score));
+  pendingMode = runMode;
+  renderLeaderboardStatus();
+  if (pendingScore <= 0) return;
+  const name = cleanPlayerName(lbUI.name.value || playerName);
+  if (!name) {
+    setLeaderboardStatus(`RUN ${formatScore(pendingScore)} PTS · ENTER NAME TO SAVE`);
+    return;
+  }
+  savePlayerName(name);
+  submitOnlineScore({ name, score: pendingScore, mode: pendingMode, at: Date.now() }, { auto: true });
+}
+lbUI.form.addEventListener('submit', event => {
+  event.preventDefault();
+  const name = cleanPlayerName(lbUI.name.value);
+  if (!name) {
+    setLeaderboardStatus('ENTER A NAME (1–12 LETTERS OR NUMBERS)', 'error');
+    lbUI.name.focus({ preventScroll: true });
+    return;
+  }
+  savePlayerName(name);
+  if (pendingScore <= 0) {
+    setLeaderboardStatus('NAME SAVED · PLAY A RUN TO SET A SCORE', 'good');
+    return;
+  }
+  submitOnlineScore({ name, score: pendingScore, mode: pendingMode, at: Date.now() });
+});
+lbUI.name.addEventListener('change', () => {
+  const name = cleanPlayerName(lbUI.name.value);
+  if (!name) return;
+  savePlayerName(name);
+  // Entering a name after a run should save that run even if the player
+  // starts the next one without pressing the button.
+  if (pendingScore > 0 && !scoreSubmitting) {
+    submitOnlineScore({ name, score: pendingScore, mode: pendingMode, at: Date.now() });
+  }
+});
+lbUI.refresh.addEventListener('click', () => loadLeaderboard());
+try { playerName = cleanPlayerName(localStorage.getItem(PLAYER_NAME_KEY) || ''); } catch {}
+if (playerName) lbUI.name.value = playerName;
+onlineScores = readScoreCache();
+renderLeaderboard();
+loadLeaderboard({ announce: false });
 let width = 1000, height = 650, mode = 'ready', previous = 0, world = 0;
 let score = 0, health = 100, heat = 0, escapeStars = 0, escapeTime = 0;
 let selectedGameMode = 'normal', runMode = 'normal', powerUnlocked = false;
@@ -973,6 +1295,7 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const stars = () => heat;
 const MAX_SPEED = 100 / 3.6 * 10 * 3; // 100 km/h on the calibrated speedometer.
 const CAMERA_ZOOM = 1.75;
+let cameraZoom = CAMERA_ZOOM;
 const CAMERA_BOARD_Y = .30;
 // Preserve the original movement; use the calibrated HUD scale for patrol capture.
 const PHYSICS_UNITS_PER_METER = 10;
@@ -1001,10 +1324,11 @@ function hop() {
 function resize() {
   const oldBoardY = board.y;
   const viewport = canvas.getBoundingClientRect();
-  width = viewport.width / CAMERA_ZOOM; height = viewport.height / CAMERA_ZOOM;
+  cameraZoom = Math.min(CAMERA_ZOOM, Math.max(.8, viewport.width / 360));
+  width = viewport.width / cameraZoom; height = viewport.height / cameraZoom;
   const dpr = Math.min(devicePixelRatio || 1, 2);
   canvas.width = Math.round(viewport.width * dpr); canvas.height = Math.round(viewport.height * dpr);
-  ctx.setTransform(dpr * CAMERA_ZOOM, 0, 0, dpr * CAMERA_ZOOM, 0, 0);
+  ctx.setTransform(dpr * cameraZoom, 0, 0, dpr * cameraZoom, 0, 0);
   ctx.imageSmoothingEnabled = false;
   board.y = height * CAMERA_BOARD_Y;
   // Resizing moves the camera, never the board's position on the mountain.
@@ -1207,7 +1531,8 @@ function quitRun() {
   ui.overlay.querySelector('.eyebrow').textContent = titleContent.eyebrow;
   ui.overlay.querySelector('h1').innerHTML = titleContent.heading;
   ui.overlay.querySelector('p').innerHTML = titleContent.description;
-  updateModePicker(); document.getElementById('normalMode').focus({ preventScroll: true });
+  updateModePicker(); finishLeaderboardRun();
+  document.getElementById('normalMode').focus({ preventScroll: true });
 }
 function end(reason = 'crash') {
   if (rescue()) return;
@@ -1220,6 +1545,7 @@ function end(reason = 'crash') {
   ui.overlay.querySelector('h1').textContent = reason === 'patrol' ? 'SKI PATROL GOT YOU' : 'That escalated downhill.';
   ui.overlay.querySelector('p').textContent = `${Math.floor(score).toLocaleString()} points · ${Math.floor(world / WORLD_PIXELS_PER_METER)} meters · personal best ${best.toLocaleString()}`;
   updateModePicker();
+  finishLeaderboardRun();
 }
 document.getElementById('normalMode').addEventListener('click', () => selectGameMode('normal'));
 document.getElementById('powerMode').addEventListener('click', () => selectGameMode('power'));
@@ -1274,7 +1600,31 @@ window.addEventListener('keydown', e => {
 window.addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
 window.addEventListener('blur', () => { keys.clear(); touch = null; if (mode === 'playing') togglePause(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && mode === 'playing') togglePause(); });
-function pointer(e) { const r = canvas.getBoundingClientRect(); touch = { x: (e.clientX - r.left) / CAMERA_ZOOM, y: (e.clientY - r.top) / CAMERA_ZOOM }; }
+const mobileControls = document.getElementById('mobileControls');
+const heldPointers = new Map();
+const heldControl = key => [...heldPointers.values()].some(button => button.dataset.control === key);
+function clearMobileControls() {
+  heldPointers.clear();
+  mobileControls.querySelectorAll('button').forEach(button => button.classList.remove('held'));
+}
+for (const button of mobileControls.querySelectorAll('button')) {
+  button.addEventListener('pointerdown', e => {
+    if (mode !== 'playing') return;
+    e.preventDefault(); gameAudio.unlock(); touch = null;
+    button.setPointerCapture(e.pointerId);
+    heldPointers.set(e.pointerId, button); button.classList.add('held');
+    if (button.dataset.control === 'hop') hop();
+  });
+  const release = e => {
+    heldPointers.delete(e.pointerId);
+    if (![...heldPointers.values()].includes(button)) button.classList.remove('held');
+  };
+  for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) button.addEventListener(event, release);
+  button.addEventListener('contextmenu', e => e.preventDefault());
+}
+window.addEventListener('blur', clearMobileControls);
+document.addEventListener('visibilitychange', () => { if (document.hidden) clearMobileControls(); });
+function pointer(e) { const r = canvas.getBoundingClientRect(); touch = { x: (e.clientX - r.left) / cameraZoom, y: (e.clientY - r.top) / cameraZoom }; }
 canvas.addEventListener('pointerdown', e => {
   gameAudio.unlock();
   if (e.button !== 0 || !e.isPrimary) return;
@@ -1442,10 +1792,10 @@ function update(dt) {
     burst(board.x, board.y, '#ccc');
     gameAudio.effect('landing');
   }
-  let steering = Number(keys.has('arrowright') || keys.has('d')) - Number(keys.has('arrowleft') || keys.has('a'));
+  let steering = Number(keys.has('arrowright') || keys.has('d') || heldControl('d')) - Number(keys.has('arrowleft') || keys.has('a') || heldControl('a'));
   if (touch) steering = clamp((touch.x - width / 2) / 70, -1, 1);
-  const tuck = touch ? clamp(1 - touch.y / (height * .4), 0, 1) : Number(keys.has('arrowup') || keys.has('w'));
-  const brakeInput = touch ? clamp((touch.y / height - .65) / .35, 0, 1) : Number(keys.has('arrowdown') || keys.has('s'));
+  const tuck = touch ? clamp(1 - touch.y / (height * .4), 0, 1) : Number(keys.has('arrowup') || keys.has('w') || heldControl('w'));
+  const brakeInput = touch ? clamp((touch.y / height - .65) / .35, 0, 1) : Number(keys.has('arrowdown') || keys.has('s') || heldControl('s'));
   if (airTime === 0) {
     // Lock the braking stance until released; reversing changes travel, not pose.
     if (board.edge === 0 && brakeInput > 0) board.facing = Math.sign(steering) || board.facing;
@@ -2213,6 +2563,8 @@ function drawHelicopter(craft = helicopter, altitude = 60) {
   pixel(x - rotorWidth / 2, top - 22, '#333', rotorWidth, 3);
 }
 function frame(now) {
+  mobileControls.hidden = mode !== 'playing';
+  if (mode !== 'playing') clearMobileControls();
   const dt = Math.min((now - previous) / 1000 || 0, .04); previous = now;
   if (mode === 'playing') update(dt);
   const nearbyPatrol = entities.filter(e => e.type === 'patrol' && !e.hit && Math.hypot(e.x - board.x, e.y - board.y) < 300).length;
