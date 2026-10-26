@@ -671,7 +671,7 @@ const gameAudio = (() => {
 <script>
 /* Run-local upgrades. Simulation stays frozen while cards animate. */
 const upgradeCatalog = [
-  ['rain', 'Rain From Above', 'STUNT', 'BOOM', 'Only successful extra Bunny Board hops trigger instant blasts beneath you. More ranks add blasts. Blasts score skier and patrol hits.'],
+  ['rain', 'Rain From Above', 'STUNT', 'BOOM', 'Each successful extra Bunny Board hop triggers one instant blast beneath you; a normal first hop does not. Rainbow jumps rain explosions; more ranks speed up that rain. Blasts score skier and patrol hits.'],
   ['skis', 'Loose Cannons', 'CHAIN REACTION', 'II', 'Downed skiers release skis downhill, scoring hits on skiers and patrol. More ranks add piercing hits.'],
   ['domino', 'Domino Effect', 'CHAIN REACTION', '>>', 'Downed skiers tumble downhill into others. More ranks extend their reach.'],
   ['snowball', 'Snowball Effect', 'CHAIN REACTION', 'O', 'Carve to charge; hop to launch. Rank 2: two balls. Rank 3: faster growth. Rank 4: three balls. Every rank after 4: faster growth and longer travel.'],
@@ -690,7 +690,7 @@ const upgradeCatalog = [
 ];
 let upgrades = {}, nextUpgradeScore = 5000, upgradeOffers = [], upgradeSelectionTimer;
 let shots = [], snowCharge = 0, extraHops = 0, flightHits = 0, rescueCharges = 0;
-let bombs = [];
+let bombs = [], bombRain = false, bombTimer = 0;
 let gangTimer = 5;
 const rank = id => runMode === 'power' ? upgrades[id] || 0 : 0;
 const upgradeOverlay = document.getElementById('upgradeOverlay');
@@ -699,7 +699,7 @@ function resetUpgrades() {
   clearTimeout(upgradeSelectionTimer);
   upgrades = {}; nextUpgradeScore = 5000; upgradeOffers = [];
   shots = []; snowCharge = 0;
-  bombs = [];
+  bombs = []; bombRain = false; bombTimer = 0;
   gangTimer = 5;
   extraHops = 0; flightHits = 0; rescueCharges = 0;
   upgradeOverlay.hidden = true;
@@ -869,6 +869,14 @@ function updateGangUp(dt) {
   }
 }
 function updateUpgradeEffects(dt, downhillSpeed, steering, brake) {
+  if (airTime === 0) bombRain = false;
+  if (bombRain && rank('rain')) {
+    bombTimer -= dt;
+    if (bombTimer <= 0 && bombs.length < 60) {
+      bombs.push({x: board.x, y: board.y, blast: .35, fresh: true});
+      bombTimer = Math.max(.08, .32 / rank('rain'));
+    }
+  }
   for (const bomb of bombs) {
     if (!bomb.fresh) {
       bomb.y -= downhillSpeed * dt;
@@ -1318,13 +1326,7 @@ function hop() {
   if (airTime > 0) {
     if (extraHops >= rank('bunny')) return;
     extraHops++; airTime = airDuration;
-    if (rank('rain')) {
-      const count = rank('rain'), spread = Math.min(150, 34 * (count - 1));
-      for (let i = 0; i < count && bombs.length < 60; i++) {
-        const offset = count === 1 ? 0 : (i / (count - 1) - .5) * spread;
-        bombs.push({x: board.x + offset, y: board.y, blast: .35, fresh: true});
-      }
-    }
+    if (rank('rain') && bombs.length < 60) bombs.push({x: board.x, y: board.y, blast: .35, fresh: true});
   } else {
     if (hopCooldown > 0) return;
     extraHops = 0; flightHits = 0;
@@ -2032,6 +2034,7 @@ function update(dt) {
       ramp.usedJump = true;
       jumpKind = 'ramp';
       extraHops = 0; flightHits = 0;
+      bombRain = rank('rain') > 0; bombTimer = 0;
       board.speed = Math.min(MAX_SPEED, board.speed + 20 / 3.6 * PHYSICS_UNITS_PER_METER * 3);
       airDuration = 1.1 + board.speed / MAX_SPEED * .8; airTime = airDuration;
       board.vx = 0;
