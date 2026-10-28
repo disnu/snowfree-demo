@@ -659,8 +659,9 @@ body[data-ui-theme="news"] #overlay .station-board .station-columns { font-famil
   body[data-ui-theme="news"] #message { top: 60px; left: 50%; right: auto; transform: translateX(-50%); max-width: 64%; font-size: 8px; line-height: 1.5; text-align: center; }
   #message { display: none; }
   body[data-ui-theme="news"] .score-readout { bottom: 6px; max-width: 60%; }
-  body[data-ui-theme="news"] .score-readout #scoreLabel { display: none; }
-  body[data-ui-theme="news"] .score-readout > div { gap: 10px; font-size: clamp(12px, 2vw, 17px); }
+  body[data-ui-theme="news"] .score-readout #scoreLabel { display: block; margin-bottom: 4px; font-size: 8px; line-height: 1.4; letter-spacing: 0; color: #164d91; }
+  body[data-ui-theme="news"] .score-readout > div { gap: 10px; font-size: 16px; text-shadow: 1px 1px 0 #14213a; }
+  body[data-ui-theme="news"] .score-readout strong { font-weight: 400; font-synthesis: none; }
   body[data-ui-theme="news"] #newsTicker { display: none; }
   body[data-ui-theme="news"] .slope-label { display: none; }
   #mobileControls { bottom: 6px; left: 6px; right: 6px; gap: 6px; }
@@ -2078,7 +2079,7 @@ function updateHUD() {
   tickerUI.total.textContent = showingScore ? chainTotal.toLocaleString() : '0';
   tickerUI.combo.textContent = showingScore ? Math.round(chainTotal * chainMultiplier).toLocaleString() : '0';
   ui.trickScore.textContent = showingScore ? chainTotal.toLocaleString() : '0';
-  ui.scoreLabel.textContent = 'VENGEANCE STOCKS';
+  ui.scoreLabel.textContent = compactView() ? 'Vengeance Score' : 'VENGEANCE STOCKS';
   ui.scoreReadout.hidden = !showingScore;
   ui.scoreReadout.dataset.active = String(showingScore);
   ui.healthFill.style.width = `${clamp(health, 0, 100)}%`;
