@@ -637,10 +637,9 @@ body[data-ui-theme="news"] #overlay .station-board .station-columns { font-famil
 
 /* Compact landscape phone HUD: joystick left, actions right, ticker between. */
 @media (orientation: landscape) and (pointer: coarse), (orientation: landscape) and (max-height: 520px) and (max-width: 700px) {
-  header { flex-basis: 38px; height: 38px; }
+  header { flex-basis: 38px; height: 38px; justify-content: flex-end; }
+  header a, body[data-ui-theme="news"] .news-live { display: none; }
   #pause { min-height: 30px; padding: 3px 9px; font-size: 8px; }
-  body[data-ui-theme="news"] .news-live { gap: 6px; padding: 1px 7px; font-size: 9px; line-height: 16px; }
-  body[data-ui-theme="news"] .news-live::after { width: 9px; height: 9px; }
   body[data-ui-theme="news"] .score-hud { top: 4px; left: 4px; bottom: auto; width: 92px; padding: 2px 3px; row-gap: 1px; column-gap: 3px; }
   body[data-ui-theme="news"] .score-news-header { margin: -2px -3px 1px; padding: 2px 3px; font-size: 5px; line-height: 1.3; }
   body[data-ui-theme="news"] .score-hud .hud-label { font-size: 4px; }
@@ -658,6 +657,7 @@ body[data-ui-theme="news"] #overlay .station-board .station-columns { font-famil
   body[data-ui-theme="news"] .speed-value span { font-size: 4px; }
   body[data-ui-theme="news"] .run-clock { display: none; }
   body[data-ui-theme="news"] #message { top: 60px; left: 50%; right: auto; transform: translateX(-50%); max-width: 64%; font-size: 8px; line-height: 1.5; text-align: center; }
+  #message { display: none; }
   body[data-ui-theme="news"] .score-readout { bottom: 6px; max-width: 60%; }
   body[data-ui-theme="news"] .score-readout #scoreLabel { display: none; }
   body[data-ui-theme="news"] .score-readout > div { gap: 10px; font-size: clamp(12px, 2vw, 17px); }
@@ -1280,7 +1280,7 @@ function chooseUpgrade(index) {
   upgradeSelectionTimer = setTimeout(() => {
     upgradeOverlay.hidden = true; keys.clear(); touch = null;
     mode = 'playing';
-    ui.pause.textContent = 'Pause · P';
+    ui.pause.textContent = pauseLabel();
     toast(`${name.toUpperCase()}!`);
     if (document.hidden) togglePause(); else offerUpgrade();
   }, 650);
@@ -1983,6 +1983,9 @@ function hop() {
 function compactView() {
   return window.matchMedia('(pointer: coarse)').matches || innerWidth <= 700;
 }
+function pauseLabel() {
+  return `${mode === 'paused' ? 'Resume' : 'Pause'}${compactView() ? '' : ' · P'}`;
+}
 function resize() {
   const oldBoardY = board.y;
   const viewport = canvas.getBoundingClientRect();
@@ -1999,6 +2002,7 @@ function resize() {
   for (const item of [...entities, ...trails, ...particles]) item.y += board.y - oldBoardY;
   for (const item of [...shots, ...bombs]) item.y += board.y - oldBoardY;
   if (mode === 'playing' || mode === 'paused') ensureTerrain();
+  ui.pause.textContent = pauseLabel();
 }
 new ResizeObserver(resize).observe(canvas);
 function toast(text) { ui.message.textContent = text; toastTimer = 2.6; }
@@ -2127,7 +2131,7 @@ function start() {
   board = { x: 0, y: height * CAMERA_BOARD_Y, vx: 0, speed: 240, edge: 0, traverse: 0, facing: 1, brakeAngle: 0 };
   patrolTargetHistory.push({ time: 0, x: board.x, world: 0, vx: 0, speed: board.speed });
   ensureTerrain();
-  mode = 'playing'; ui.overlay.hidden = true; resultsUI.screen.hidden = true; ui.pause.textContent = 'Pause · P';
+  mode = 'playing'; ui.overlay.hidden = true; resultsUI.screen.hidden = true; ui.pause.textContent = pauseLabel();
   toast('RUNAWAY BOARD! Hit skiers to start trouble.'); updateHUD();
 }
 function togglePause() {
@@ -2142,7 +2146,7 @@ function togglePause() {
     pauseUI.pauseMenu.hidden = false;
     pauseUI.resumeRun.focus({ preventScroll: true });
   } else ui.pause.focus({ preventScroll: true });
-  ui.pause.textContent = mode === 'paused' ? 'Resume · P' : 'Pause · P';
+  ui.pause.textContent = pauseLabel();
   toast(mode === 'paused' ? 'PAUSED — press P or Resume' : 'BACK ON THE SLOPE');
 }
 function closePauseMenus() {
@@ -2233,7 +2237,7 @@ function returnToMenu() {
   ui.best.textContent = best.toLocaleString();
   resetUpgrades(); armor = 0; ui.armorStatus.hidden = true; closePauseMenus(); keys.clear(); touch = null;
   mode = 'ready'; resultsUI.screen.hidden = true; ui.overlay.hidden = false; ui.scoreReadout.hidden = true;
-  ui.pause.textContent = 'Pause · P'; toastTimer = 0;
+  ui.pause.textContent = pauseLabel(); toastTimer = 0;
   ui.overlay.querySelector('.eyebrow').textContent = titleContent.eyebrow;
   ui.overlay.querySelector('h1').innerHTML = titleContent.heading;
   updateModePicker();
