@@ -267,10 +267,6 @@ footer { height: 33px; display: flex; align-items: center; justify-content: spac
   .mountain { flex: 1; min-height: 0; height: auto; }
   footer { display: none; }
   #mobileControls { position: absolute; z-index: 4; bottom: 10px; left: 8px; right: 8px; display: flex; justify-content: space-between; align-items: flex-end; gap: 8px; pointer-events: none; }
-  .mobile-steering, .mobile-actions { display: flex; gap: 6px; }
-  .mobile-actions { flex-wrap: wrap; justify-content: flex-end; max-width: 180px; }
-  #mobileControls button { pointer-events: auto; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; min-width: 48px; min-height: 54px; padding: 8px; font-size: 8px; background: #26334ce6; }
-  #mobileControls button.held { background: #e8ee74; color: #172442; border-color: #172442; }
   .score-hud { top: 10px; left: 10px; width: 125px; }
   .condition-label { margin-top: 8px; }
   .speedometer { top: 10px; right: 10px; width: 105px; }
@@ -559,6 +555,31 @@ body:has(#nameGate:not([hidden])) .mountain { height: 100dvh; min-height: 0; bor
 #overlay .station-board #lbStatus { margin: 0; font-size: 9px; color: #d4c8a2; }
 #overlay .station-board #lbSave { width: 100%; margin-top: 6px; }
 
+/* Landscape gate for phones and tablets. */
+#rotateNotice { display: none; }
+@media (orientation: portrait) and (pointer: coarse), (orientation: portrait) and (max-width: 700px) {
+  #rotateNotice { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 24px; background: #081a30f7; color: #eef6ff; text-align: center; }
+  .rotate-card { max-width: 320px; }
+  .rotate-card h2 { margin: 0 0 14px; font-size: 16px; line-height: 1.7; color: #fff; }
+  .rotate-card p { margin: 0; font-size: 9px; line-height: 2; color: #b8d8f8; }
+  .rotate-phone { width: 66px; height: 112px; margin: 0 auto 22px; border: 4px solid #d7e8f7; border-radius: 8px; background: linear-gradient(160deg, #174c88, #0b2242); box-shadow: inset 0 0 0 3px #081a30, 0 6px 0 #05101e; transform: rotate(90deg); }
+  .rotate-phone::after { content: ''; display: block; width: 8px; height: 8px; margin: 6px auto; background: #ff6b83; clip-path: polygon(3px 0, 5px 0, 5px 1px, 6px 1px, 6px 2px, 7px 2px, 7px 3px, 8px 3px, 8px 5px, 7px 5px, 7px 6px, 6px 6px, 6px 7px, 5px 7px, 5px 8px, 3px 8px, 3px 7px, 2px 7px, 2px 6px, 1px 6px, 1px 5px, 0 5px, 0 3px, 1px 3px, 1px 2px, 2px 2px, 2px 1px, 3px 1px); }
+}
+
+/* Analog steering stick. */
+.joystick { position: relative; flex: 0 0 auto; width: 124px; height: 124px; pointer-events: auto; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.joystick-base { position: absolute; inset: 0; border: 3px solid #8baacb; border-radius: 50%; background: radial-gradient(circle at 50% 38%, #174c88 0, #0b2242 68%, #05101e 100%); box-shadow: inset 0 3px 10px #000a, 0 3px 0 #05101e; }
+.joystick-base::before, .joystick-base::after { content: ''; position: absolute; background: #8baacb55; }
+.joystick-base::before { left: 14%; right: 14%; top: 50%; height: 2px; }
+.joystick-base::after { top: 14%; bottom: 14%; left: 50%; width: 2px; }
+.joystick-knob { position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; margin: -28px 0 0 -28px; border: 3px solid #d7e8f7; border-radius: 50%; background: linear-gradient(#2a629d 0 48%, #123a66 48%); box-shadow: inset 0 2px 0 #ffffff40, 0 3px 0 #05101e; transform: translate(var(--jx, 0px), var(--jy, 0px)); }
+.joystick.active .joystick-knob { border-color: #fff; background: linear-gradient(#3a7cbb 0 48%, #175089 48%); }
+#mobileControls[hidden] { display: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rotate-phone { transform: rotate(90deg); }
+}
+
 /* Pixel typography for the existing News Pursuit layout. */
 body[data-ui-theme="news"] { font-family: 'Press Start 2P', monospace; }
 body[data-ui-theme="news"] .news-live { display: inline-flex; align-items: center; gap: 12px; padding: 3px 12px; font-size: 16px; font-style: normal; line-height: 24px; color: #fff; background: #ed0000; }
@@ -611,21 +632,80 @@ body[data-ui-theme="news"] .tv-controls .menu-actions button { font-size: 9px; }
 body[data-ui-theme="news"] #overlay .station-board .lb-head h2,
 body[data-ui-theme="news"] #overlay .station-board .station-columns { font-family: 'Press Start 2P', monospace; font-size: 7px; letter-spacing: 0; }
 
+/* Compact landscape phone HUD: joystick left, actions right, ticker between. */
+@media (orientation: landscape) and (pointer: coarse), (orientation: landscape) and (max-height: 520px) and (max-width: 700px) {
+  header { flex-basis: 38px; height: 38px; }
+  #pause { min-height: 30px; padding: 3px 9px; font-size: 8px; }
+  body[data-ui-theme="news"] .news-live { gap: 6px; padding: 1px 7px; font-size: 9px; line-height: 16px; }
+  body[data-ui-theme="news"] .news-live::after { width: 9px; height: 9px; }
+  body[data-ui-theme="news"] .score-hud { top: 4px; left: 4px; bottom: auto; width: 92px; padding: 2px 3px; row-gap: 1px; column-gap: 3px; }
+  body[data-ui-theme="news"] .score-news-header { margin: -2px -3px 1px; padding: 2px 3px; font-size: 5px; line-height: 1.3; }
+  body[data-ui-theme="news"] .score-hud .hud-label { font-size: 4px; }
+  body[data-ui-theme="news"] .score-hud #score { grid-column: 1 / -1; font-size: 10px; line-height: 1.4; }
+  body[data-ui-theme="news"] .score-hud #wanted { grid-column: 1 / -1; grid-row: auto; margin-top: 1px; font-size: 7px; letter-spacing: 1px; }
+  body[data-ui-theme="news"] .score-hud .condition-label { margin: 1px 0; font-size: 4px; }
+  body[data-ui-theme="news"] .score-hud .condition-track { height: 3px; }
+  body[data-ui-theme="news"] .score-hud .armor-status { margin-top: 1px; font-size: 4px; }
+  body[data-ui-theme="news"] .score-hud .patrol-status { display: none; }
+  body[data-ui-theme="news"] .personal-best { display: none; }
+  body[data-ui-theme="news"] .speedometer { top: 4px; right: 4px; bottom: auto; width: 58px; height: 39px; }
+  body[data-ui-theme="news"] .speedometer > small { font-size: 5px; line-height: 11px; }
+  body[data-ui-theme="news"] .speed-value { height: 26px; padding: 0 1px; gap: 1px; }
+  body[data-ui-theme="news"] #speed { font-size: 12px; }
+  body[data-ui-theme="news"] .speed-value span { font-size: 4px; }
+  body[data-ui-theme="news"] .run-clock { display: none; }
+  body[data-ui-theme="news"] #message { top: 60px; left: 50%; right: auto; transform: translateX(-50%); max-width: 64%; font-size: 8px; line-height: 1.5; text-align: center; }
+  body[data-ui-theme="news"] .score-readout { bottom: 6px; max-width: 60%; }
+  body[data-ui-theme="news"] .score-readout #scoreLabel { display: none; }
+  body[data-ui-theme="news"] .score-readout > div { gap: 10px; font-size: clamp(12px, 2vw, 17px); }
+  body[data-ui-theme="news"] #newsTicker { display: none; }
+  body[data-ui-theme="news"] .slope-label { display: none; }
+  #mobileControls { bottom: 6px; left: 6px; right: 6px; gap: 6px; }
+  #overlay .tv-controls { gap: 8px; padding: 10px 8px; }
+  #overlay .tv-controls h1 { font-size: 16px; margin: 0; }
+  #overlay .tv-controls > .eyebrow { display: none; }
+  #overlay .tv-controls .mode-picker button { min-height: 46px; font-size: 8px; border-radius: 8px; }
+  #overlay .tv-controls .menu-actions button { min-height: 32px; font-size: 8px; }
+  #overlay .tv-hardware { min-height: 0; flex: 0 0 auto; gap: 8px; padding: 8px 4px 2px; }
+  #overlay .tv-dials { display: none; }
+  #overlay .tv-controls .station-board { min-height: 0; }
+  .pause-layer { padding: 8px; }
+  .pause-panel h2, .powers-panel h2 { font-size: 16px; line-height: 1.5; }
+  .pause-panel button { min-height: 38px; }
+  #upgradeOverlay { padding: 8px 10px; overflow: auto; }
+  #upgradeCards { gap: 8px; margin: 8px 0; }
+  .upgrade-card { min-height: 0; padding: 10px 8px; gap: 6px; }
+  .card-icon { display: none; }
+  body[data-ui-theme="news"] .upgrade-card strong { font-size: 11px; line-height: 1.5; }
+  body[data-ui-theme="news"] .upgrade-card > span:not(.card-icon) { font-size: 8px; line-height: 1.5; }
+  body[data-ui-theme="news"] .upgrade-card small, body[data-ui-theme="news"] .upgrade-card b { font-size: 7px; }
+  .upgrade-panel h2 { margin: 4px 0; font-size: 14px; }
+  #upgradeCollection { display: none; }
+}
+@media (orientation: landscape) and (pointer: coarse) and (max-height: 360px), (orientation: landscape) and (max-height: 360px) and (max-width: 700px) {
+  body[data-ui-theme="news"] #message { top: 55px; }
+  body[data-ui-theme="news"] .score-readout { bottom: 4px; }
+  .joystick { width: 104px; height: 104px; }
+  .joystick-knob { width: 48px; height: 48px; margin: -24px 0 0 -24px; }
+}
+
 </style></head>
 <body data-ui-theme="news">
 <header><a href="./">SNOW<span>FREE</span><small>BOARD GONE ROGUE</small></a><span class="news-live">LIVE</span><button id="pause">Pause · P</button></header>
 <main>
   <div class="mountain">
     <canvas id="game" aria-label="SnowFree downhill snowboarding game"></canvas>
-    <nav id="mobileControls" aria-label="Touch game controls" hidden>
-      <div class="mobile-steering">
-        <button type="button" data-control="a" aria-label="Steer left">◀</button>
-        <button type="button" data-control="d" aria-label="Steer right">▶</button>
+    <section id="rotateNotice" role="dialog" aria-modal="true" aria-labelledby="rotateTitle">
+      <div class="rotate-card">
+        <div class="rotate-phone" aria-hidden="true"></div>
+        <h2 id="rotateTitle">TURN YOUR PHONE</h2>
+        <p>SnowFree plays in landscape. Rotate your device sideways to continue.</p>
       </div>
-      <div class="mobile-actions">
-        <button type="button" data-control="w" aria-label="Accelerate">FAST</button>
-        <button type="button" data-control="s" aria-label="Brake">BRAKE</button>
-        <button type="button" data-control="hop" aria-label="Jump">HOP</button>
+    </section>
+    <nav id="mobileControls" aria-label="Touch game controls" hidden>
+      <div id="joystick" class="joystick" role="group" aria-label="Drag left or right to steer; push up to brake">
+        <div class="joystick-base" aria-hidden="true"></div>
+        <div id="joystickKnob" class="joystick-knob" aria-hidden="true"></div>
       </div>
     </nav>
     <section class="score-hud" aria-label="Score and board status">
@@ -723,6 +803,7 @@ body[data-ui-theme="news"] #overlay .station-board .station-columns { font-famil
               <li><strong>Brake + left/right:</strong> slide sideways and slow down.</li>
               <li><strong>Space / left-click:</strong> small hop. Rainbow ramps launch you higher.</li>
               <li><strong>P:</strong> pause or resume. The pause menu includes sound settings and your powers.</li>
+              <li><strong>Phones / tablets:</strong> rotate to landscape, then drag the left joystick to steer and push it up to brake. Tap anywhere on the slope to hop.</li>
             </ul>
             <p>Straight downhill builds speed. Gentle turns keep momentum.</p>
           </section>
@@ -1894,10 +1975,15 @@ function hop() {
   gameAudio.effect('hop');
   burst(board.x, board.y, '#ccc');
 }
+function compactView() {
+  return window.matchMedia('(pointer: coarse)').matches || innerWidth <= 700;
+}
 function resize() {
   const oldBoardY = board.y;
   const viewport = canvas.getBoundingClientRect();
-  cameraZoom = Math.min(CAMERA_ZOOM, Math.max(.8, viewport.width / 360));
+  cameraZoom = compactView()
+    ? Math.max(.75, Math.min(CAMERA_ZOOM, viewport.width / 800))
+    : Math.min(CAMERA_ZOOM, Math.max(.8, viewport.width / 360));
   width = viewport.width / cameraZoom; height = viewport.height / cameraZoom;
   const dpr = Math.min(devicePixelRatio || 1, 2);
   canvas.width = Math.round(viewport.width * dpr); canvas.height = Math.round(viewport.height * dpr);
@@ -2043,7 +2129,7 @@ function togglePause() {
   gameAudio.unlock();
   if (mode !== 'playing' && mode !== 'paused') return;
   mode = mode === 'playing' ? 'paused' : 'playing';
-  keys.clear(); touch = null;
+  keys.clear(); touch = null; clearMobileControls();
   closePauseMenus();
   if (mode === 'paused') {
     gameAudio.hush();
@@ -2282,10 +2368,48 @@ window.addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
 window.addEventListener('blur', () => { keys.clear(); touch = null; if (mode === 'playing') togglePause(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && mode === 'playing') togglePause(); });
 const mobileControls = document.getElementById('mobileControls');
+const joystick = document.getElementById('joystick');
+const joystickKnob = document.getElementById('joystickKnob');
+let joystickAxis = 0, joystickBrake = 0, joystickPointer = null;
+function setJoystickPosition(clientX, clientY) {
+  const rect = joystick.getBoundingClientRect();
+  const max = rect.width * .3;
+  const dx = clamp(clientX - (rect.left + rect.width / 2), -max, max);
+  const dy = clamp(clientY - (rect.top + rect.height / 2), -max, max);
+  joystickAxis = Math.abs(dx) / max < .14 ? 0 : clamp(dx / max, -1, 1);
+  const up = -dy / max;
+  joystickBrake = up > .15 ? clamp((up - .15) / .85, 0, 1) : 0;
+  joystickKnob.style.setProperty('--jx', `${dx}px`);
+  joystickKnob.style.setProperty('--jy', `${dy}px`);
+}
+function resetJoystick() {
+  joystickPointer = null; joystickAxis = 0; joystickBrake = 0;
+  joystick.classList.remove('active');
+  joystickKnob.style.setProperty('--jx', '0px');
+  joystickKnob.style.setProperty('--jy', '0px');
+}
+joystick.addEventListener('pointerdown', e => {
+  if (mode !== 'playing') return;
+  e.preventDefault(); gameAudio.unlock(); touch = null;
+  joystickPointer = e.pointerId;
+  joystick.classList.add('active');
+  joystick.setPointerCapture(e.pointerId);
+  setJoystickPosition(e.clientX, e.clientY);
+});
+joystick.addEventListener('pointermove', e => {
+  if (e.pointerId !== joystickPointer) return;
+  e.preventDefault();
+  setJoystickPosition(e.clientX, e.clientY);
+});
+for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+  joystick.addEventListener(event, e => { if (e.pointerId === joystickPointer) resetJoystick(); });
+}
+joystick.addEventListener('contextmenu', e => e.preventDefault());
 const heldPointers = new Map();
 const heldControl = key => [...heldPointers.values()].some(button => button.dataset.control === key);
 function clearMobileControls() {
   heldPointers.clear();
+  resetJoystick();
   mobileControls.querySelectorAll('button').forEach(button => button.classList.remove('held'));
 }
 for (const button of mobileControls.querySelectorAll('button')) {
@@ -2305,10 +2429,20 @@ for (const button of mobileControls.querySelectorAll('button')) {
 }
 window.addEventListener('blur', clearMobileControls);
 document.addEventListener('visibilitychange', () => { if (document.hidden) clearMobileControls(); });
+const portraitGate = window.matchMedia('(orientation: portrait) and (pointer: coarse), (orientation: portrait) and (max-width: 700px)');
+function syncOrientationGate() {
+  if (!portraitGate.matches) return;
+  clearMobileControls();
+  if (mode === 'playing') togglePause();
+}
+if (portraitGate.addEventListener) portraitGate.addEventListener('change', syncOrientationGate);
+else if (portraitGate.addListener) portraitGate.addListener(syncOrientationGate);
+syncOrientationGate();
 function pointer(e) { const r = canvas.getBoundingClientRect(); touch = { x: (e.clientX - r.left) / cameraZoom, y: (e.clientY - r.top) / cameraZoom }; }
 canvas.addEventListener('pointerdown', e => {
   gameAudio.unlock();
   if (e.button !== 0 || !e.isPrimary) return;
+  if (compactView()) { e.preventDefault(); hop(); return; }
   canvas.setPointerCapture(e.pointerId); pointer(e); hop();
 });
 canvas.addEventListener('pointermove', e => { if (touch) pointer(e); });
@@ -2492,9 +2626,11 @@ function update(dt) {
     gameAudio.effect('landing');
   }
   let steering = Number(keys.has('arrowright') || keys.has('d') || heldControl('d')) - Number(keys.has('arrowleft') || keys.has('a') || heldControl('a'));
+  if (joystickAxis) steering = clamp(steering + joystickAxis, -1, 1);
   if (touch) steering = clamp((touch.x - width / 2) / 70, -1, 1);
   const tuck = touch ? clamp(1 - touch.y / (height * .4), 0, 1) : Number(keys.has('arrowup') || keys.has('w') || heldControl('w'));
-  const brakeInput = touch ? clamp((touch.y / height - .65) / .35, 0, 1) : Number(keys.has('arrowdown') || keys.has('s') || heldControl('s'));
+  let brakeInput = touch ? clamp((touch.y / height - .65) / .35, 0, 1) : Number(keys.has('arrowdown') || keys.has('s') || heldControl('s'));
+  brakeInput = Math.max(brakeInput, joystickBrake);
   if (airTime === 0) {
     // Lock the braking stance until released; reversing changes travel, not pose.
     if (board.edge === 0 && brakeInput > 0) board.facing = Math.sign(steering) || board.facing;
