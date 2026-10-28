@@ -2085,7 +2085,7 @@ function updateHUD() {
   tickerUI.total.textContent = showingScore ? chainTotal.toLocaleString() : '0';
   tickerUI.combo.textContent = showingScore ? Math.round(chainTotal * chainMultiplier).toLocaleString() : '0';
   ui.trickScore.textContent = showingScore ? chainTotal.toLocaleString() : '0';
-  ui.scoreLabel.textContent = compactView() ? 'Vengeance Score' : 'VENGEANCE STOCKS';
+  ui.scoreLabel.textContent = compactView() ? 'Score' : 'VENGEANCE STOCKS';
   ui.scoreReadout.hidden = !showingScore;
   ui.scoreReadout.dataset.active = String(showingScore);
   ui.healthFill.style.width = `${clamp(health, 0, 100)}%`;
