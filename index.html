@@ -344,7 +344,9 @@ body[data-ui-theme="news"] .speed-track { height: 3px; background: #59616d; }
 body[data-ui-theme="news"] #speedFill { background: #ef5366; }
 body[data-ui-theme="news"] .distance-value { margin-top: 7px; gap: 8px; }
 body[data-ui-theme="news"] #distance { font-size: 12px; }
-body[data-ui-theme="news"] .score-readout { display: none !important; }
+body[data-ui-theme="news"] .score-readout { bottom: 100px; font-family: 'Press Start 2P', monospace; }
+body[data-ui-theme="news"] .score-readout > div { font-size: clamp(16px, 2.267vw, 28px); }
+body[data-ui-theme="news"] .score-readout .score-underline { display: none; }
 body[data-ui-theme="news"] #message { top: 14px; left: 16px; transform: none; max-width: calc(100% - 230px); font-size: 14px; line-height: 1.4; font-weight: 800; padding: 7px 10px; background: #b2162a; color: #fff; text-shadow: none; text-align: left; }
 body[data-ui-theme="news"] .slope-label { bottom: 8px; left: 16px; display: flex; gap: 10px; font-size: 9px; color: #303947; background: #f6f6f2d9; padding: 2px 6px; line-height: 1.2; }
 body[data-ui-theme="news"] .slope-label span { display: inline; margin: 0; color: #59616d; }
@@ -392,12 +394,14 @@ body[data-ui-theme="news"] #newsTicker { display: block; position: absolute; lef
 body[data-ui-theme="news"] .score-hud { bottom: 100px; }
 body[data-ui-theme="news"] .slope-label { bottom: 78px; }
 body[data-ui-theme="news"] .speedometer { bottom: 8px; width: 170px; padding: 0; overflow: hidden; border: 1px solid #bdc5cd; background: linear-gradient(110deg, #2f060b, #7f1420); }
-body[data-ui-theme="news"] .speedometer > small { display: block; text-align: center; font-size: 13px; font-weight: 900; line-height: 24px; color: #161d24; background: linear-gradient(#fff, #d5dce2); }
-body[data-ui-theme="news"] .speed-value { padding: 5px 10px; margin: 0; text-align: center; }
-body[data-ui-theme="news"] #speed { font-size: 32px; font-weight: 400; }
-body[data-ui-theme="news"] .speed-track { margin: 0 10px; height: 2px; }
+body[data-ui-theme="news"] .speedometer > small { display: block; text-align: center; font-size: 13px; font-weight: 900; line-height: 36px; color: #161d24; background: linear-gradient(#fff, #d5dce2); }
+body[data-ui-theme="news"] .speed-value { padding: 7.5px 10px; margin: 0; text-align: center; }
+body[data-ui-theme="news"] #speed { font-size: 48px; font-weight: 400; }
+body[data-ui-theme="news"] .speed-value span { font-size: 15px; }
+body[data-ui-theme="news"] .speed-track { margin: 0 10px; height: 3px; }
 body[data-ui-theme="news"] .distance-value { padding: 4px 10px; margin: 0; }
-body[data-ui-theme="news"] .news-multiplier { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 6px; align-items: center; padding: 4px 10px; border-top: 1px solid #ffffff40; background: #20070bcc; }
+body[data-ui-theme="news"] .news-multiplier,
+body[data-ui-theme="news"] .distance-value { display: none; }
 body[data-ui-theme="news"] .news-multiplier small { grid-column: 1 / -1; text-align: left; font-size: 9px; color: #e0b95d; }
 body[data-ui-theme="news"] #newsComboTotal { text-align: left; font-size: 16px; color: #fff; overflow-wrap: anywhere; }
 body[data-ui-theme="news"] #newsMultiplier { font-size: 22px; color: #ffe394; }
@@ -439,7 +443,13 @@ body[data-ui-theme="news"] #helpContent h3 { color: #a5d2ff; }
 body[data-ui-theme="news"] .sound-control input,
 body[data-ui-theme="news"] .theme-picker input { accent-color: #60a5e8; }
 body[data-ui-theme="news"] .leaderboard { background: #102747f2; }
-body[data-ui-theme="news"] .score-hud { bottom: 24px; width: var(--news-score-width); }
+body[data-ui-theme="news"] .score-hud { bottom: 24px; width: var(--news-score-width); padding: 14px 12px; row-gap: 6px; background: #f6f6f2; color: var(--news-blue); border: 1px solid #8baacb; }
+body[data-ui-theme="news"] .score-news-header { grid-column: 1 / -1; grid-row: 1; margin: -14px -12px 4px; padding: 9px 12px; background: linear-gradient(#0b2242 0 50%, #081a30 50%); color: #fff; font-size: 12px; line-height: 1.4; }
+body[data-ui-theme="news"] .score-hud #wanted { grid-row: 2 / 4; }
+body[data-ui-theme="news"] .score-hud :is(.hud-label, #score, #wanted, .condition-label, .armor-status, .patrol-status, .personal-best) { color: var(--news-blue); }
+body[data-ui-theme="news"] .score-hud .condition-track { background: #b8c4cf; }
+body[data-ui-theme="news"] .score-hud #healthFill { background: var(--news-blue); }
+body[data-ui-theme="news"] .patrol-status { margin-top: 6px; line-height: 1.8; }
 body[data-ui-theme="news"] #newsTicker { left: calc(32px + var(--news-score-width)); bottom: 24px; background: #0b2242; border-color: #8baacb; }
 body[data-ui-theme="news"] .ticker-summary,
 body[data-ui-theme="news"] .speedometer > small { color: #16375e; background: linear-gradient(#fff, #d4e4f4); }
@@ -522,6 +532,9 @@ body:has(#overlay:not([hidden])) .mountain { height: 100dvh; min-height: 0; bord
 #overlay .station-board .lb-head { flex-shrink: 0; padding: 4px 4px 10px; margin: 0; border: 0; background: none; box-shadow: none; }
 #overlay .station-board .lb-head h2 { color: #c9ced0; font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: 800; letter-spacing: 1.5px; text-shadow: 0 -1px #111, 0 1px #ffffff18; }
 #overlay .station-board #lbRefresh { width: 22px; height: 22px; flex-shrink: 0; font-size: 12px; border-radius: 50%; }
+#overlay .station-board .lb-mode-picker { display: flex; gap: 8px; margin: 0 4px 8px; }
+#overlay .station-board .lb-mode-picker button { flex: 1; min-width: 0; min-height: 26px; padding: 5px 8px; font-size: 9px; letter-spacing: 1px; }
+#overlay .station-board .lb-mode-picker button[aria-pressed="true"] { color: #ffe18b; background: #20272c; border-color: #11181c; box-shadow: inset 0 2px 4px #0009, 0 1px #737b82; }
 #overlay .station-board .station-columns { display: grid; grid-template-columns: 2fr 12fr 11fr; gap: 5px; padding: 4px 5px 6px; color: #aeb6bb; font-family: Arial, Helvetica, sans-serif; font-size: 9px; font-weight: 700; letter-spacing: .7px; text-shadow: 0 -1px #111; }
 #overlay .station-board #lbList { flex: none; display: grid; grid-auto-rows: auto; min-height: 0; max-height: none; margin: 0; padding: 5px; overflow: hidden; border: 3px solid #1a1f23; border-top-color: #111619; border-bottom-color: #6c7378; border-radius: 6px; background: #12171a; box-shadow: inset 0 3px 8px #000, 0 1px 0 #858c9055; }
 #overlay .station-board .lb-row { display: grid; grid-template-columns: 2fr 12fr 11fr; align-items: stretch; gap: 5px; padding: 3px 2px; font-family: 'Courier New', monospace; font-size: clamp(10px, 4.8cqw, 19px); line-height: 1; border: 0; border-top: 1px solid #555d6355; border-bottom: 2px solid #171d21; box-shadow: inset 0 -1px #0b0f12; background: linear-gradient(#353c42, #252c31); }
@@ -546,8 +559,60 @@ body:has(#nameGate:not([hidden])) .mountain { height: 100dvh; min-height: 0; bor
 #overlay .station-board #lbStatus { margin: 0; font-size: 9px; color: #d4c8a2; }
 #overlay .station-board #lbSave { width: 100%; margin-top: 6px; }
 
+/* Pixel typography for the existing News Pursuit layout. */
+body[data-ui-theme="news"] { font-family: 'Press Start 2P', monospace; }
+body[data-ui-theme="news"] .news-live { display: inline-flex; align-items: center; gap: 12px; padding: 3px 12px; font-size: 16px; font-style: normal; line-height: 24px; color: #fff; background: #ed0000; }
+body[data-ui-theme="news"] .news-live::after { content: ''; width: 12px; height: 12px; flex-shrink: 0; background: #ff6b83; clip-path: polygon(4px 0, 8px 0, 8px 2px, 10px 2px, 10px 4px, 12px 4px, 12px 8px, 10px 8px, 10px 10px, 8px 10px, 8px 12px, 4px 12px, 4px 10px, 2px 10px, 2px 8px, 0 8px, 0 4px, 2px 4px, 2px 2px, 4px 2px); }
+body[data-ui-theme="news"] header button { font-size: 8px; }
+body[data-ui-theme="news"] footer { font-size: 6px; }
+body[data-ui-theme="news"] .hud-label { font-size: 8px; }
+body[data-ui-theme="news"] #score { font-size: 16px; line-height: 1.9; }
+body[data-ui-theme="news"] #wanted { font-size: 14px; letter-spacing: 0; }
+body[data-ui-theme="news"] .condition-label,
+body[data-ui-theme="news"] .armor-status,
+body[data-ui-theme="news"] .patrol-status { font-size: 7px; }
+body[data-ui-theme="news"] .armor-status strong { font-size: 8px; }
+body[data-ui-theme="news"] .personal-best { font-size: 6px; }
+body[data-ui-theme="news"] .run-clock small { font-size: 7px; }
+body[data-ui-theme="news"] #time { font-size: 12px; }
+body[data-ui-theme="news"] .speedometer { height: 111px; background: linear-gradient(90deg, #081e3d 0 50%, #174c88 50%); }
+body[data-ui-theme="news"] .speedometer > small { font-size: 10px; }
+body[data-ui-theme="news"] .speed-value { height: 70px; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 0 6px; }
+body[data-ui-theme="news"] #speed { font-size: 32px; line-height: 1; }
+body[data-ui-theme="news"] .speed-value span { font-size: 8px; margin-left: 0; }
+body[data-ui-theme="news"] .ticker-summary { font-size: 9px; }
+body[data-ui-theme="news"] .ticker-summary strong { font-size: 14px; }
+body[data-ui-theme="news"] .ticker-entry { font-size: 10px; }
+body[data-ui-theme="news"] .ticker-entry strong { font-size: 12px; }
+body[data-ui-theme="news"] .ticker-summary,
+body[data-ui-theme="news"] .speedometer > small { background: linear-gradient(#fff 0 50%, #d4e4f4 50%); }
+body[data-ui-theme="news"] .slope-label { font-size: 6px; }
+body[data-ui-theme="news"] #message { font-size: 10px; line-height: 1.6; }
+body[data-ui-theme="news"] button { font-size: 10px; }
+body[data-ui-theme="news"] .power-entry h3,
+body[data-ui-theme="news"] #helpContent h3 { font-size: 12px; }
+body[data-ui-theme="news"] .power-entry p,
+body[data-ui-theme="news"] .powers-panel > p,
+body[data-ui-theme="news"] .sound-control label,
+body[data-ui-theme="news"] #helpContent,
+body[data-ui-theme="news"] .theme-picker label,
+body[data-ui-theme="news"] .upgrade-panel p,
+body[data-ui-theme="news"] #upgradeCollection,
+body[data-ui-theme="news"] .upgrade-card > span:not(.card-icon) { font-size: 10px; line-height: 1.8; }
+body[data-ui-theme="news"] .theme-picker legend,
+body[data-ui-theme="news"] .power-entry small,
+body[data-ui-theme="news"] .upgrade-card small,
+body[data-ui-theme="news"] .upgrade-card b { font-size: 8px; }
+body[data-ui-theme="news"] .upgrade-card strong { font-size: 14px; }
+body[data-ui-theme="news"] #overlay .tv-controls h1 { font-size: 23px; }
+body[data-ui-theme="news"] #overlay .tv-controls > .eyebrow { font-size: 7px; }
+body[data-ui-theme="news"] .tv-controls .mode-picker button { font-size: 9px; }
+body[data-ui-theme="news"] .tv-controls .menu-actions button { font-size: 9px; }
+body[data-ui-theme="news"] #overlay .station-board .lb-head h2,
+body[data-ui-theme="news"] #overlay .station-board .station-columns { font-family: 'Press Start 2P', monospace; font-size: 7px; letter-spacing: 0; }
+
 </style></head>
-<body>
+<body data-ui-theme="news">
 <header><a href="./">SNOW<span>FREE</span><small>BOARD GONE ROGUE</small></a><span class="news-live">LIVE</span><button id="pause">Pause · P</button></header>
 <main>
   <div class="mountain">
@@ -565,6 +630,7 @@ body:has(#nameGate:not([hidden])) .mountain { height: 100dvh; min-height: 0; bor
     </nav>
     <section class="score-hud" aria-label="Score and board status">
       <div class="hud-label">SCORE</div><strong id="score">0</strong>
+      <div class="score-news-header">BREAKING NEWS</div>
       <div class="condition-label"><span>BOARD</span><span id="health">100%</span></div>
       <div class="condition-track"><div id="healthFill"></div></div>
       <div id="armorStatus" class="armor-status" aria-label="Armor" hidden>ARMOR <strong id="armor">0</strong><span id="armorMax">/5</span></div>
@@ -573,7 +639,7 @@ body:has(#nameGate:not([hidden])) .mountain { height: 100dvh; min-height: 0; bor
       <div class="personal-best">BEST <span id="best">0</span></div>
     </section>
     <div class="run-clock" aria-label="Elapsed run time"><small>RUN TIME</small><strong id="time">00:00.0</strong></div>
-    <div class="speedometer" aria-label="Speed and distance">
+    <div class="speedometer" aria-label="Speed">
       <small>SPEED</small><div class="speed-value"><strong id="speed">0</strong><span>KM/H</span></div>
       <div class="speed-track"><div id="speedFill"></div></div>
       <div class="distance-value"><small>DISTANCE</small><strong id="distance">0 m</strong></div>
@@ -636,12 +702,8 @@ body:has(#nameGate:not([hidden])) .mountain { height: 100dvh; min-height: 0; bor
     <section id="optionsPopup" class="pause-layer" role="dialog" aria-modal="true" aria-labelledby="optionsTitle" hidden>
       <div class="powers-panel options-panel">
         <h2 id="optionsTitle">OPTIONS</h2>
-        <fieldset class="theme-picker">
-          <legend>INTERFACE</legend>
-          <label><input type="radio" name="uiTheme" value="classic" checked> CLASSIC</label>
-          <label><input type="radio" name="uiTheme" value="news"> NEWS PURSUIT</label>
-        </fieldset>
-        <button id="optionsSound" type="button">SOUND</button>
+        <p>Music and sound effects · Set to 0% to mute. Settings save automatically.</p>
+        <div id="optionsSettings"></div>
         <button id="closeOptions" type="button">BACK</button>
       </div>
     </section>
@@ -672,16 +734,16 @@ body:has(#nameGate:not([hidden])) .mountain { height: 100dvh; min-height: 0; bor
             <h3>SURVIVE THE MOUNTAIN</h3>
             <p>Dodge rocks and trees, avoid rough snow that slows you down, and stay away from the yeti. Impacts damage board health and break your multiplier. At 0% health, the run ends.</p>
             <p>Patrol chases you as your wanted level rises. Keep moving, lose pursuers, or knock them down with obstacles and powers. Attached patrol slows you down and can capture you.</p>
-            <p>Armor absorbs damage before board health: a 10-damage hit uses 5 armor and removes 5% health if you have 5 armor.</p>
+            <p>Armor absorbs damage before board health: a 15-damage hit uses 5 armor and removes 10% health if you have 5 armor.</p>
           </section>
           <section>
             <h3>GAME MODES</h3>
-            <p>NORMAL is classic survival without powers. Knock down a helicopter in Normal to unlock POWER. In Power mode, earning score offers upgrades; choose a card with 1, 2, 3, or a click. Review collected powers from the pause menu.</p>
-            <p id="modeHint" role="status">Normal: no powers. Knock down a helicopter to unlock Power.</p>
+            <p>NORMAL is survival without powers. Both modes are available from the start. In Power mode, earning score offers upgrades; choose a card with 1, 2, 3, or a click. Review collected powers from the pause menu.</p>
+            <p id="modeHint" role="status">Normal: downhill survival, no powers.</p>
           </section>
           <section>
             <h3>AFTER YOUR RUN</h3>
-            <p>After a run, the TV shows the final broadcast and your points alongside the usual menu controls. Choose a game mode to save your score under your remembered name and start another run. If saving fails, use SAVE SCORE on the leaderboard to retry.</p>
+            <p>After a run, the TV shows the final broadcast and your points alongside the usual menu controls. Your leaderboard rank updates immediately and your score saves automatically under your remembered name. Choose a game mode to start another run. If saving fails, use SAVE SCORE on the leaderboard to retry.</p>
           </section>
         </div>
         <button id="closeHelp" type="button">BACK</button>
@@ -715,7 +777,7 @@ body:has(#nameGate:not([hidden])) .mountain { height: 100dvh; min-height: 0; bor
       <h1>SNOWFREE</h1>
       <div class="mode-picker" role="group" aria-label="Game mode">
         <button id="normalMode" type="button" aria-pressed="true">NORMAL</button>
-        <button id="powerMode" type="button" aria-pressed="false" aria-describedby="modeHint" disabled>POWER · LOCKED</button>
+        <button id="powerMode" type="button" aria-pressed="false" aria-describedby="modeHint">POWER</button>
       </div>
       <div class="menu-actions">
         <button id="viewOptions" type="button" aria-haspopup="dialog" aria-controls="optionsPopup">OPTIONS</button>
@@ -728,6 +790,10 @@ body:has(#nameGate:not([hidden])) .mountain { height: 100dvh; min-height: 0; bor
           <div class="lb-head">
             <h2 id="lbTitle">ONLINE TOP 10</h2>
             <button id="lbRefresh" type="button" aria-label="Refresh online leaderboard" title="Refresh">↻</button>
+          </div>
+          <div class="lb-mode-picker" role="group" aria-label="Leaderboard mode">
+            <button type="button" data-leaderboard-mode="normal" aria-pressed="true" aria-controls="lbList">NORMAL</button>
+            <button type="button" data-leaderboard-mode="power" aria-pressed="false" aria-controls="lbList">POWER</button>
           </div>
           <div class="station-columns" aria-hidden="true"><span>#</span><span>PLAYER</span><span>POINTS</span></div>
           <ol id="lbList" tabindex="0" aria-label="Online top 10 scores"></ol>
@@ -1064,14 +1130,13 @@ const upgradeCatalog = [
   ['domino', 'Domino Effect', 'CHAIN REACTION', '>>', 'Downed skiers tumble downhill into others. More ranks extend their reach.'],
   ['snowball', 'Snowball Effect', 'CHAIN REACTION', 'O', 'Carve to charge; hop to launch. Rank 2: two balls. Rank 3: faster growth. Rank 4: three balls. Every rank after 4: faster growth and longer travel.'],
   ['mix', 'Mix of Destruction', 'CHAIN REACTION', 'TREE', 'Patrol and tumbling skiers shake tree snow into snowballs. Uses your Snowball Effect count, growth and travel. One rank only.'],
-  ['rocks', '30 Rocks', 'CHAIN REACTION', '30', 'Patrol and tumbling skiers break rocks into 30 tiny downhill pellets. More ranks widen the spread and extend travel.'],
+  ['rocks', '30 Rocks', 'CHAIN REACTION', '30', 'Patrol and tumbling skiers break rocks into 30 tiny pellets in all directions. More ranks extend travel.'],
   ['gang', 'Gang Up', 'CHAIN REACTION', 'CREW', 'Every 5 seconds, summon one snowboarder per rank ahead of you. Summoned riders knock down patrol on contact at any distance from you and bypass the normal one-snowboarder limit.'],
   ['debris', 'Explosive Exit', 'CHAIN REACTION', '*', 'Helicopter takedowns launch a fan of debris that downs patrol and skiers. More ranks add fragments.'],
   ['bunny', 'Bunny Board', 'MOVEMENT', '^^', 'Hop again while airborne. Each rank adds one extra hop per flight.'],
   ['shave', 'Close Shave', 'RISK / REWARD', '!', 'Skim past rocks and trees without hitting them for 100 points per rank, once per obstacle.'],
   ['enemy', 'Public Enemy', 'RISK / REWARD', '*****', 'Patrol arrival and helicopter drops are faster. Pursuit points increase by 50% per rank.'],
   ['glass', 'Glass Cannon', 'RISK / REWARD', 'X', 'Skier takedowns score 50% more per rank, but you take 50% more obstacle damage per rank.'],
-  ['encore', 'Encore', 'STUNT', 'RAINBOW', 'Helicopter takedowns create a rainbow ramp ahead with a clear landing lane. More ranks add 250 takedown points.'],
   ['repair', 'Scrap Repairs', 'SURVIVAL', 'ARM', 'Every patrol knockdown adds 1 armor, up to 5. Damage consumes armor before board health: 1 armor absorbs 1 percentage point of damage. One rank only.'],
   ['wind', 'Second Wind', 'SURVIVAL', '<3', 'Gain one rescue charge: survive a fatal hit or capture with 30 health, an escape jump and brief protection.'],
   ['crowd', 'Crowd Pleaser', 'STUNT', '+++', 'Each skier after the first hit during one flight adds a 250-point group bonus per rank.']
@@ -1144,7 +1209,7 @@ window.addEventListener('keydown', e => {
   }
 });
 function launchShot(kind, x, y, vx = 0) {
-  // Pellets have a separate pool so a full shotgun volley cannot starve skis
+  // Pellets have a separate pool so a full radial burst cannot starve skis
   // or snowballs, or be truncated by those longer-lived projectiles.
   if (kind !== 'pebble' && shots.filter(s => s.kind !== 'pebble').length >= 120) return;
   const snowRank = Math.max(1, rank('snowball'));
@@ -1185,11 +1250,10 @@ function impactTerrain(e) {
       let retire = Math.max(0, shots.filter(s => s.kind === 'pebble').length - 90);
       shots = shots.filter(s => s.kind !== 'pebble' || retire-- <= 0);
       const level = rank('rocks');
-      const spread = Math.min(1.35, .45 + (level - 1) * .12);
       for (let i = 0; i < 30; i++) {
-        const angle = (i / 29 * 2 - 1) * spread;
+        const angle = i / 30 * Math.PI * 2;
         const speed = 260 + (i % 5) * 22;
-        const shot = launchShot('pebble', e.x, e.y + 18, Math.sin(angle) * speed);
+        const shot = launchShot('pebble', e.x, e.y, Math.sin(angle) * speed);
         if (!shot) break;
         shot.speed = Math.cos(angle) * speed;
         shot.radius = 2; shot.life = .32 + (level - 1) * .12;
@@ -1231,11 +1295,6 @@ function rescue() {
 }
 function helicopterUpgrades(wreck) {
   if (rank('debris')) for (let i = -2 - rank('debris'); i <= 2 + rank('debris'); i++) launchShot('debris', wreck.x, wreck.y, i * 90);
-  if (rank('encore')) {
-    const y = board.y + board.speed * (airTime + .6) + 140;
-    spawn('jump', board.x, y);
-    jumpLanes.set(`encore:${elapsed}`, { x: board.x, start: world + y - board.y - 28, end: world + y - board.y + MAX_SPEED * 1.9 + 210 });
-  }
 }
 function updateGangUp(dt) {
   if (!rank('gang')) { gangTimer = 5; return; }
@@ -1473,8 +1532,7 @@ const menuUI = {
 const startBroadcastSrc = menuUI.frame.querySelector('.menu-art').src;
 const titleContent = { eyebrow: ui.overlay.querySelector('.eyebrow').textContent, heading: ui.overlay.querySelector('h1').innerHTML };
 const helpUI = Object.fromEntries(['helpPopup', 'helpContent', 'viewHelp', 'closeHelp'].map(id => [id, document.getElementById(id)]));
-const optionsUI = Object.fromEntries(['optionsPopup', 'viewOptions', 'optionsSound', 'closeOptions'].map(id => [id, document.getElementById(id)]));
-let soundOrigin = 'pause';
+const optionsUI = Object.fromEntries(['optionsPopup', 'viewOptions', 'optionsSettings', 'closeOptions'].map(id => [id, document.getElementById(id)]));
 const tickerUI = {
   track: document.getElementById('tickerTrack'),
   window: document.querySelector('.ticker-window'),
@@ -1520,16 +1578,6 @@ function updateScoreTicker(dt) {
   }
   tickerUI.track.style.transform = `translateX(${tickerOffset}px)`;
 }
-function setUITheme(value) {
-  const theme = value === 'news' ? 'news' : 'classic';
-  document.body.dataset.uiTheme = theme;
-  resetScoreTicker();
-  for (const input of optionsUI.optionsPopup.querySelectorAll('[name="uiTheme"]')) input.checked = input.value === theme;
-  try { localStorage.setItem('snowfree-ui-theme', theme); } catch {}
-}
-let savedUITheme = 'classic';
-try { savedUITheme = localStorage.getItem('snowfree-ui-theme') || 'classic'; } catch {}
-setUITheme(savedUITheme);
 function layoutMenuArt() {
   if (!menuUI.clip || !menuUI.frame) return;
   const clipWidth = menuUI.clip.clientWidth, clipHeight = menuUI.clip.clientHeight;
@@ -1563,6 +1611,7 @@ const lbUI = {
   refresh: document.getElementById('lbRefresh')
 };
 let onlineScores = [], onlineStatus = 'SYNCING…', onlineStatusTone = '';
+let leaderboardMode = 'normal';
 let playerName = '', pendingScore = 0, pendingMode = 'normal';
 let scoreSubmitting = false, queuedScore = null, leaderboardLoading = false;
 let leaderboardVersion = 0;
@@ -1589,18 +1638,15 @@ function normalizeScores(data) {
       mode: item.mode === 'power' ? 'power' : 'normal',
       at: Number.isFinite(Number(item.at)) ? Math.max(0, Number(item.at)) : 0
     };
-    const key = name.toLocaleLowerCase();
+    const key = `${entry.mode}|${name.toLocaleLowerCase()}`;
     const old = byName.get(key);
     if (!old || entry.score > old.score) byName.set(key, entry);
   }
-  return [...byName.values()].sort((a, b) => b.score - a.score || a.at - b.at).slice(0, LEADERBOARD_KEEP);
+  const sorted = [...byName.values()].sort((a, b) => b.score - a.score || a.at - b.at);
+  return ['normal', 'power'].flatMap(mode => sorted.filter(entry => entry.mode === mode).slice(0, LEADERBOARD_KEEP));
 }
 function mergeScore(scores, entry) {
-  const merged = scores.map(item => ({ ...item }));
-  const index = merged.findIndex(item => item.name.toLocaleLowerCase() === entry.name.toLocaleLowerCase());
-  if (index < 0) merged.push(entry);
-  else if (entry.score > merged[index].score) merged[index] = entry;
-  return merged.sort((a, b) => b.score - a.score || a.at - b.at).slice(0, LEADERBOARD_KEEP);
+  return normalizeScores([...scores, entry]);
 }
 function readScoreCache() {
   try { return normalizeScores(JSON.parse(localStorage.getItem(LEADERBOARD_CACHE_KEY) || '[]')); } catch { return []; }
@@ -1618,7 +1664,11 @@ function renderLeaderboardStatus() {
   lbUI.save.title = `Save ${formatScore(pendingScore)} points`;
 }
 function renderLeaderboard() {
-  const top = onlineScores.slice(0, LEADERBOARD_SHOW);
+  const top = onlineScores.filter(entry => entry.mode === leaderboardMode).slice(0, LEADERBOARD_SHOW);
+  lbUI.list.setAttribute('aria-label', `${leaderboardMode === 'power' ? 'Power' : 'Normal'} online top 10 scores`);
+  for (const button of document.querySelectorAll('[data-leaderboard-mode]')) {
+    button.setAttribute('aria-pressed', String(button.dataset.leaderboardMode === leaderboardMode));
+  }
   lbUI.list.replaceChildren();
   const ownName = playerName.toLocaleLowerCase();
   for (let index = 0; index < LEADERBOARD_SHOW; index++) {
@@ -1627,7 +1677,7 @@ function renderLeaderboard() {
       row.className = 'lb-row';
       row.classList.toggle('vacant', !entry);
       row.setAttribute('aria-label', entry ? `${index + 1}. ${entry.name}, ${formatScore(entry.score)} points` : `${index + 1}. Empty position`);
-      const key = entry ? `${entry.name.toLocaleLowerCase()}|${entry.score}` : '';
+      const key = entry ? `${entry.mode}|${entry.name.toLocaleLowerCase()}|${entry.score}` : '';
       if (entry && ownName && entry.name.toLocaleLowerCase() === ownName) row.classList.add('you');
       if (key === lastSubmittedKey && Date.now() < freshUntil) row.classList.add('fresh');
       const rank = document.createElement('span'); rank.className = 'lb-rank'; rank.textContent = String(index + 1).padStart(2, '0');
@@ -1717,7 +1767,7 @@ async function submitOnlineScore(entry, { auto = false } = {}) {
     leaderboardVersion++;
     onlineScores = merged; cacheScores();
     pendingScore = 0;
-    lastSubmittedKey = `${entry.name.toLocaleLowerCase()}|${entry.score}`;
+    lastSubmittedKey = `${entry.mode}|${entry.name.toLocaleLowerCase()}|${entry.score}`;
     freshUntil = Date.now() + 1600;
     setLeaderboardStatus(`SAVED · ${entry.name} · ${formatScore(entry.score)}`, 'good');
     return true;
@@ -1744,8 +1794,12 @@ function finishLeaderboardRun() {
     setLeaderboardStatus(`RUN ${formatScore(pendingScore)} PTS · ENTER NAME TO SAVE`);
     return;
   }
-  savePlayerName(name);
-  submitOnlineScore({ name, score: pendingScore, mode: pendingMode, at: Date.now() }, { auto: true });
+  const entry = { name, score: pendingScore, mode: pendingMode, at: Date.now() };
+  // Show this run's ranking immediately while the online save completes.
+  leaderboardVersion++;
+  onlineScores = mergeScore(onlineScores, entry);
+  renderLeaderboard();
+  submitOnlineScore(entry, { auto: true });
 }
 lbUI.form.addEventListener('submit', event => {
   event.preventDefault();
@@ -1765,6 +1819,12 @@ nameGateForm.addEventListener('submit', event => {
   document.getElementById('normalMode').focus({ preventScroll: true });
 });
 lbUI.refresh.addEventListener('click', () => loadLeaderboard());
+for (const button of document.querySelectorAll('[data-leaderboard-mode]')) {
+  button.addEventListener('click', () => {
+    leaderboardMode = button.dataset.leaderboardMode;
+    renderLeaderboard();
+  });
+}
 try { playerName = cleanPlayerName(localStorage.getItem(PLAYER_NAME_KEY) || ''); } catch {}
 if (playerName) lbUI.name.value = playerName;
 nameGate.hidden = !!playerName;
@@ -1776,7 +1836,7 @@ loadLeaderboard({ announce: false });
 let width = 1000, height = 650, mode = 'ready', previous = 0, world = 0;
 let score = 0, health = 100, armor = 0, heat = 0, escapeStars = 0, escapeTime = 0;
 const ARMOR_CAP = 5;
-let selectedGameMode = 'normal', runMode = 'normal', powerUnlocked = false;
+let selectedGameMode = 'normal', runMode = 'normal';
 let elapsed = 0, patrolTimer = 0, yetiTimer = 24, invincible = 0;
 let terrainChunks = new Set(), terrainSeed = 1;
 let jumpLanes = new Map();
@@ -1802,7 +1862,6 @@ const CHAIN_WINDOW = 1;
 let entities = [], particles = [], trails = [], toastTimer = 0, best = 0;
 let board = { x: 500, y: 200, vx: 0, speed: 240, edge: 0, traverse: 0, facing: 1, brakeAngle: 0 }, touch = null;
 try { best = Number(localStorage.getItem('snowfree-best')) || 0; } catch {}
-try { powerUnlocked = localStorage.getItem('snowfree-power-unlocked') === 'true'; } catch {}
 ui.best.textContent = best.toLocaleString();
 const rand = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -1939,37 +1998,26 @@ function updateHUD() {
 }
 function updateModePicker() {
   const powerButton = document.getElementById('powerMode');
-  powerButton.disabled = !powerUnlocked;
-  powerButton.textContent = powerUnlocked ? 'POWER' : 'POWER · LOCKED';
   powerButton.setAttribute('aria-pressed', String(selectedGameMode === 'power'));
   document.getElementById('normalMode').setAttribute('aria-pressed', String(selectedGameMode === 'normal'));
   document.getElementById('modeHint').textContent = selectedGameMode === 'power'
     ? 'Power: choose upgrades as your score grows.'
-    : powerUnlocked ? 'Normal: classic downhill survival, no powers. Power unlocked!'
-    : 'Normal: no powers. Knock down a helicopter to unlock Power.';
+    : 'Normal: downhill survival, no powers.';
 }
 function selectGameMode(choice) {
   if (mode !== 'ready' && mode !== 'over') return;
-  if (choice !== 'normal' && !(choice === 'power' && powerUnlocked)) return;
+  if (choice !== 'normal' && choice !== 'power') return;
   selectedGameMode = choice; updateModePicker();
   start();
 }
-function unlockPowerMode(cheat = false) {
-  if ((!cheat && runMode !== 'normal') || powerUnlocked) return false;
-  powerUnlocked = true;
-  try { localStorage.setItem('snowfree-power-unlocked', 'true'); } catch {}
-  updateModePicker();
-  return true;
-}
 function start() {
   if (!playerName || !nameGate.hidden) return;
-  if (ui.overlay.classList.contains('showing-results')) finishLeaderboardRun();
   resetMenuBroadcast();
   resetScoreTicker();
   gameAudio.unlock();
   gameAudio.resetMusic();
   closePauseMenus();
-  runMode = selectedGameMode === 'power' && powerUnlocked ? 'power' : 'normal';
+  runMode = selectedGameMode === 'power' ? 'power' : 'normal';
   resetUpgrades();
   score = 0; health = 100; armor = 0; heat = 0; escapeStars = 0; escapeTime = 0;
   elapsed = 0; world = 0; patrolTimer = 0; yetiTimer = 24; invincible = 0;
@@ -2042,16 +2090,18 @@ function showOptions() {
   if (mode !== 'ready' || ui.overlay.hidden) return;
   closePauseMenus(); keys.clear(); touch = null;
   ui.overlay.hidden = true; optionsUI.optionsPopup.hidden = false;
-  optionsUI.optionsPopup.querySelector('input:checked').focus({ preventScroll: true });
+  optionsUI.optionsSettings.append(document.getElementById('soundControls'));
+  gameAudio.renderSettings();
+  optionsUI.optionsPopup.querySelector('input').focus({ preventScroll: true });
 }
 function closeOptions() {
   optionsUI.optionsPopup.hidden = true; ui.overlay.hidden = false;
   layoutMenuArt();
   optionsUI.viewOptions.focus({ preventScroll: true });
 }
-function showSound(origin = 'pause') {
-  if (origin === 'options' ? mode !== 'ready' || optionsUI.optionsPopup.hidden : mode !== 'paused') return;
-  soundOrigin = origin;
+function showSound() {
+  if (mode !== 'paused') return;
+  pauseUI.soundPopup.querySelector('.powers-panel').insertBefore(document.getElementById('soundControls'), pauseUI.closeSound);
   closePauseMenus(); gameAudio.renderSettings();
   pauseUI.soundPopup.hidden = false;
   pauseUI.soundPopup.querySelector('input').focus({ preventScroll: true });
@@ -2074,11 +2124,6 @@ function showPowers() {
   pauseUI.powersList.focus({ preventScroll: true });
 }
 function backToPause() {
-  if (!pauseUI.soundPopup.hidden && soundOrigin === 'options') {
-    closePauseMenus(); optionsUI.optionsPopup.hidden = false;
-    optionsUI.optionsSound.focus({ preventScroll: true });
-    return;
-  }
   if (mode !== 'paused') return;
   const fromSound = !pauseUI.soundPopup.hidden;
   closePauseMenus(); pauseUI.pauseMenu.hidden = false;
@@ -2117,6 +2162,9 @@ function showResults(reason = 'crash') {
   resultsUI.score.style.setProperty('--score-chars', String(finalScore.length));
   resultsUI.summary.textContent = `Run score: ${finalScore}. ${reason === 'patrol' ? 'Ski patrol got you.' : 'The run is over.'}`;
   ui.overlay.classList.add('showing-results');
+  leaderboardMode = runMode;
+  renderLeaderboard();
+  finishLeaderboardRun();
   menuUI.frame.querySelector('.menu-art').src = resultsUI.art.querySelector('img').src;
   menuUI.frame.append(resultsUI.score);
   menuUI.frame.setAttribute('aria-label', resultsUI.summary.textContent);
@@ -2128,7 +2176,6 @@ function showResults(reason = 'crash') {
 function quitResults() {
   if (mode !== 'over' || resultsUI.screen.hidden) return;
   gameAudio.hush();
-  finishLeaderboardRun();
   returnToMenu();
 }
 function end(reason = 'crash') {
@@ -2155,10 +2202,6 @@ helpUI.viewHelp.addEventListener('click', showHelp);
 helpUI.closeHelp.addEventListener('click', closeHelp);
 optionsUI.viewOptions.addEventListener('click', showOptions);
 optionsUI.closeOptions.addEventListener('click', closeOptions);
-optionsUI.optionsSound.addEventListener('click', () => showSound('options'));
-optionsUI.optionsPopup.addEventListener('change', e => {
-  if (e.target.name === 'uiTheme') setUITheme(e.target.value);
-});
 pauseUI.cheatForm.addEventListener('submit', e => {
   e.preventDefault();
   if ((mode !== 'ready' && mode !== 'over') || pauseUI.cheatsPopup.hidden) return;
@@ -2166,8 +2209,7 @@ pauseUI.cheatForm.addEventListener('submit', e => {
     pauseUI.cheatResult.textContent = 'Unknown code. Try again.';
     return;
   }
-  unlockPowerMode(true);
-  pauseUI.cheatResult.textContent = 'POWER UNLOCKED! Go back and select Power.';
+  pauseUI.cheatResult.textContent = 'Power is available! Go back and select Power.';
   pauseUI.cheatCode.value = '';
 });
 pauseUI.quitRun.addEventListener('click', quitRun);
@@ -2182,10 +2224,9 @@ window.addEventListener('keydown', e => {
     return;
   }
   gameAudio.unlock();
-  if (!optionsUI.optionsPopup.hidden || (!pauseUI.soundPopup.hidden && soundOrigin === 'options')) {
-    const inSound = !pauseUI.soundPopup.hidden;
-    const panel = inSound ? pauseUI.soundPopup : optionsUI.optionsPopup;
-    if (e.key === 'Escape') { e.preventDefault(); if (inSound) backToPause(); else closeOptions(); }
+  if (!optionsUI.optionsPopup.hidden) {
+    const panel = optionsUI.optionsPopup;
+    if (e.key === 'Escape') { e.preventDefault(); closeOptions(); }
     else if (e.key === 'Tab') {
       const controls = [...panel.querySelectorAll('button, input')].filter(el => !el.disabled && (el.type !== 'radio' || el.checked));
       e.preventDefault();
@@ -2536,14 +2577,6 @@ function update(dt) {
       }
       continue;
     }
-    if (e.type === 'patrol' && !e.hit && !e.latched && !(e.dropTime > 0)
-      && (Math.abs(e.x - board.x) > width / 2 + 60 || e.y < -60 || e.y > height + 60)) {
-      // The same surviving patroller finds the board again from a visible flank.
-      const side = Math.sign(e.x - board.x) || (Math.random() < .5 ? -1 : 1);
-      e.x = board.x + side * Math.max(35, width / 2 - 22);
-      e.y = Math.min(height - 24, board.y + 90);
-      e.intercepting = false; e.inRoughSnow = false;
-    }
     if (e.type === 'patrol' && e.latched && !e.hit) {
       e.x = board.x + e.latchSide * 18;
       e.y = board.y - 8;
@@ -2580,18 +2613,23 @@ function update(dt) {
         // Aim directly at the observed board, not beyond its lateral movement.
         // Enough cross-slope speed is essential to leave the entry flanks.
         const targetX = patrolTarget.x;
-        const lateralSpeed = aggressive ? 310 : 240;
+        // Distant pursuers ski back into view instead of being relocated.
+        const lateralCatchup = clamp((Math.abs(targetX - e.x) - width / 2) * .8, 0, 400);
+        const lateralSpeed = (aggressive ? 310 : 240) + lateralCatchup;
         e.vx = clamp((targetX - e.x) * (aggressive ? 4.5 : 3), -lateralSpeed, lateralSpeed);
         e.x += e.vx * movementDt;
         const patrolTurn = Math.abs(e.vx) / 310;
         const patrolAcceleration = 3 * (65 + 35 * (1 - clamp(patrolTurn, 0, 1)) ** 2 - patrolTurn * 45 - .0001 * e.speed ** 2);
-        const patrolMaxSpeed = (aggressive ? 90 : 80) / 3.6 * PHYSICS_UNITS_PER_METER * 3;
+        const basePatrolMaxSpeed = (aggressive ? 90 : 80) / 3.6 * PHYSICS_UNITS_PER_METER * 3;
+        const catchup = clamp((board.y - e.y - 270) / 400, 0, 1);
+        const patrolMaxSpeed = basePatrolMaxSpeed + catchup * Math.max(0, downhillSpeed + 360 - basePatrolMaxSpeed);
         const targetY = board.y + patrolTarget.world - world;
         const aheadOfBoard = e.y > board.y;
         if (!aheadOfBoard) {
           // Only patrol south of the board may brake. Delayed target positions
           // must never classify a pursuer behind the board as being in front.
-          e.speed = clamp(e.speed + Math.max(0, patrolAcceleration) * dt, 0, patrolMaxSpeed);
+          const acceleration = Math.max(0, patrolAcceleration) + catchup * 450;
+          e.speed += clamp(patrolMaxSpeed - e.speed, -500 * dt, acceleration * dt);
         } else if (e.intercepting) {
           // Predict from the delayed observation so pursuit aims at contact,
           // not at the point the board occupied 200 ms ago.
@@ -2682,9 +2720,9 @@ function update(dt) {
     helicopter = null;
     burst(wreck.x, wreck.y - 60, '#ff9100');
     helicopterRespawnAt = score + HELICOPTER_RESPAWN_SCORE;
-    awardScore(1000 + Math.max(0, rank('encore') - 1) * 250, 'helicopter');
+    awardScore(1000, 'helicopter');
     helicopterUpgrades(wreck);
-    toast(unlockPowerMode() ? 'HELICOPTER DOWN! +1000 · POWER UNLOCKED!' : 'HELICOPTER DOWN! +1000');
+    toast('HELICOPTER DOWN! +1000');
     closePatrol = entities.some(e => e.type === 'patrol' && !e.hit && Math.hypot(e.x - board.x, e.y - board.y) < 270);
   }
   for (const e of entities) {
@@ -2740,7 +2778,7 @@ function update(dt) {
           e.burning = true; e.ignitedAt = elapsed;
           burst(e.x, e.y, '#ff9100');
         }
-        damage(e.type === 'yeti' ? 20 : 10, e.type === 'yeti' ? 'YETI ATTACK! −20 condition' : e.type === 'dryTree' ? 'TREE IGNITED! −10 condition' : 'OBSTACLE! −10 condition', e.type === 'rock' ? .5 : .55, e.type);
+        damage(e.type === 'yeti' ? 20 : 15, e.type === 'yeti' ? 'YETI ATTACK! −20 condition' : e.type === 'dryTree' ? 'TREE IGNITED! −15 condition' : 'OBSTACLE! −15 condition', e.type === 'rock' ? .5 : .55, e.type);
       }
     }
   }
