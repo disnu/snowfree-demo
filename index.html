@@ -22,8 +22,9 @@
 .pause-panel { display: grid; gap: 16px; width: min(320px, 100%); text-align: center; }
 .pause-panel h2, .powers-panel h2 { font-size: 22px; line-height: 1.6; }
 .pause-panel button { min-height: 48px; }
-.powers-panel { width: min(680px, 100%); max-height: 100%; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
+.powers-panel { position: relative; width: min(680px, 100%); max-height: 100%; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
 .powers-panel h2 { margin: 0; }
+.popup-close { display: none; }
 .help-panel { width: min(760px, 100%); }
 #helpContent { overflow-y: auto; min-height: 0; padding: 4px 14px 4px 4px; text-align: left; font-size: 10px; line-height: 2; }
 #helpContent section + section { margin-top: 22px; }
@@ -675,6 +676,8 @@ body[data-ui-theme="news"] #overlay .station-board .station-columns { font-famil
   #overlay .tv-controls .station-board { min-height: 0; }
   .pause-layer { padding: 8px; }
   .pause-panel h2, .powers-panel h2 { font-size: 16px; line-height: 1.5; }
+  .pause-layer .powers-panel h2 { padding-right: 34px; }
+  .pause-layer .popup-close { position: absolute; z-index: 2; top: 3px; right: 3px; display: grid; place-items: center; width: 30px; height: 30px; min-height: 0; padding: 0; font-size: 15px; line-height: 1; border-radius: 0; box-shadow: 2px 2px 0 #070e1d; }
   .pause-panel button { min-height: 38px; }
   #powersPopup .powers-panel h2 { font-size: 11.2px; }
   #powersPopup .powers-panel > p { font-size: 7px; }
@@ -802,6 +805,7 @@ body:has(#storyDialogue:not([hidden])) .mountain > :not(#game):not(#rotateNotice
     </section>
     <section id="powersPopup" class="pause-layer" role="dialog" aria-modal="true" aria-labelledby="powersTitle" hidden>
       <div class="powers-panel">
+        <button class="popup-close" type="button" data-popup-close aria-label="Close powers">×</button>
         <h2 id="powersTitle">POWERS</h2>
         <p>All powers · Your collected ranks are highlighted.</p>
         <div id="powersList" tabindex="0" aria-label="All powers"></div>
@@ -810,6 +814,7 @@ body:has(#storyDialogue:not([hidden])) .mountain > :not(#game):not(#rotateNotice
     </section>
     <section id="soundPopup" class="pause-layer" role="dialog" aria-modal="true" aria-labelledby="soundTitle" hidden>
       <div class="powers-panel">
+        <button class="popup-close" type="button" data-popup-close aria-label="Close sound">×</button>
         <h2 id="soundTitle">SOUND</h2>
         <p>Music and sound effects · Set to 0% to mute. Settings save automatically.</p>
         <div id="soundControls"></div>
@@ -818,6 +823,7 @@ body:has(#storyDialogue:not([hidden])) .mountain > :not(#game):not(#rotateNotice
     </section>
     <section id="cheatsPopup" class="pause-layer" role="dialog" aria-modal="true" aria-labelledby="cheatsTitle" hidden>
       <form id="cheatForm" class="powers-panel">
+        <button class="popup-close" type="button" data-popup-close aria-label="Close cheats">×</button>
         <h2 id="cheatsTitle">CHEATS</h2>
         <label for="cheatCode">Enter cheat code</label>
         <input id="cheatCode" type="text" inputmode="numeric" autocomplete="off" maxlength="20">
@@ -828,6 +834,7 @@ body:has(#storyDialogue:not([hidden])) .mountain > :not(#game):not(#rotateNotice
     </section>
     <section id="optionsPopup" class="pause-layer" role="dialog" aria-modal="true" aria-labelledby="optionsTitle" hidden>
       <div class="powers-panel options-panel">
+        <button class="popup-close" type="button" data-popup-close aria-label="Close options">×</button>
         <h2 id="optionsTitle">OPTIONS</h2>
         <p>Music and sound effects · Set to 0% to mute. Settings save automatically.</p>
         <div id="optionsSettings"></div>
@@ -836,6 +843,7 @@ body:has(#storyDialogue:not([hidden])) .mountain > :not(#game):not(#rotateNotice
     </section>
     <section id="helpPopup" class="pause-layer" role="dialog" aria-modal="true" aria-labelledby="helpTitle" hidden>
       <div class="powers-panel help-panel">
+        <button class="popup-close" type="button" data-popup-close aria-label="Close help">×</button>
         <h2 id="helpTitle">HOW TO PLAY</h2>
         <div id="helpContent" tabindex="0" aria-label="How to play instructions">
           <section>
@@ -2534,6 +2542,15 @@ helpUI.viewHelp.addEventListener('click', showHelp);
 helpUI.closeHelp.addEventListener('click', closeHelp);
 optionsUI.viewOptions.addEventListener('click', showOptions);
 optionsUI.closeOptions.addEventListener('click', closeOptions);
+for (const button of document.querySelectorAll('[data-popup-close]')) {
+  button.addEventListener('click', () => {
+    const popup = button.closest('.pause-layer');
+    if (popup === pauseUI.cheatsPopup) closeCheats();
+    else if (popup === optionsUI.optionsPopup) closeOptions();
+    else if (popup === helpUI.helpPopup) closeHelp();
+    else backToPause();
+  });
+}
 pauseUI.cheatForm.addEventListener('submit', e => {
   e.preventDefault();
   if ((mode !== 'ready' && mode !== 'over') || pauseUI.cheatsPopup.hidden) return;
