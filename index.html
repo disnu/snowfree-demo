@@ -23,7 +23,7 @@
 .pause-panel h2, .powers-panel h2 { font-size: 22px; line-height: 1.6; }
 .pause-panel button { min-height: 48px; }
 .powers-panel { position: relative; width: min(680px, 100%); max-height: 100%; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
-.powers-panel h2 { margin: 0; }
+.powers-panel h2 { margin: 0; align-self: flex-start; }
 .popup-close { display: none; }
 .help-panel { width: min(760px, 100%); }
 #helpContent { overflow-y: auto; min-height: 0; padding: 4px 14px 4px 4px; text-align: left; font-size: 10px; line-height: 2; }
@@ -676,7 +676,6 @@ body[data-ui-theme="news"] #overlay .station-board .station-columns { font-famil
   #overlay .tv-controls .station-board { min-height: 0; }
   .pause-layer { padding: 8px; }
   .pause-panel h2, .powers-panel h2 { font-size: 16px; line-height: 1.5; }
-  .pause-layer .powers-panel h2 { padding-right: 34px; }
   .pause-layer .popup-close { position: absolute; z-index: 2; top: 3px; right: 3px; display: grid; place-items: center; width: 30px; height: 30px; min-height: 0; padding: 0; font-size: 15px; line-height: 1; border-radius: 0; box-shadow: 2px 2px 0 #070e1d; }
   .pause-layer #closePowers, .pause-layer #closeSound, .pause-layer #closeCheats, .pause-layer #closeOptions, .pause-layer #closeHelp { display: none; }
   .pause-panel button { min-height: 38px; }
@@ -849,7 +848,7 @@ body:has(#storyDialogue:not([hidden])) .mountain > :not(#game):not(#rotateNotice
         <div id="helpContent" tabindex="0" aria-label="How to play instructions">
           <section>
             <h3>BOARD GONE ROGUE</h3>
-            <p>You control a loose snowboard. Knock down skiers, build your score, and survive as long as you can. Select NORMAL or POWER on the start screen to begin.</p>
+            <p>You control a loose snowboard. Knock down skiers, build your score, and survive as long as you can. Select STORY or ENDLESS on the start screen to begin.</p>
           </section>
           <section>
             <h3>CONTROLS</h3>
@@ -875,8 +874,8 @@ body:has(#storyDialogue:not([hidden])) .mountain > :not(#game):not(#rotateNotice
           </section>
           <section>
             <h3>GAME MODES</h3>
-            <p>NORMAL is survival without powers. Both modes are available from the start. In Power mode, earning score offers upgrades; choose a card with 1, 2, 3, or a click. Review collected powers from the pause menu.</p>
-            <p id="modeHint" role="status">Normal: downhill survival, no powers.</p>
+            <p>Both modes include powers. STORY includes story scenes; ENDLESS skips them for an uninterrupted run. Earning score offers upgrades; choose a card with 1, 2, 3, or a click. Review collected powers from the pause menu.</p>
+            <p id="modeHint" role="status">Story: story scenes, powers, and upgrade choices.</p>
           </section>
           <section>
             <h3>AFTER YOUR RUN</h3>
@@ -914,7 +913,7 @@ body:has(#storyDialogue:not([hidden])) .mountain > :not(#game):not(#rotateNotice
       <h1>SNOWFREE</h1>
       <div class="mode-picker" role="group" aria-label="Game mode">
         <button id="normalMode" type="button" aria-pressed="true">STORY</button>
-        <button id="powerMode" type="button" aria-pressed="false" aria-describedby="modeHint">POWER</button>
+        <button id="powerMode" type="button" aria-pressed="false" aria-describedby="modeHint">ENDLESS</button>
       </div>
       <div class="menu-actions">
         <button id="viewOptions" type="button" aria-haspopup="dialog" aria-controls="optionsPopup">OPTIONS</button>
@@ -930,7 +929,7 @@ body:has(#storyDialogue:not([hidden])) .mountain > :not(#game):not(#rotateNotice
           </div>
           <div class="lb-mode-picker" role="group" aria-label="Leaderboard mode">
             <button type="button" data-leaderboard-mode="normal" aria-pressed="true" aria-controls="lbList">STORY</button>
-            <button type="button" data-leaderboard-mode="power" aria-pressed="false" aria-controls="lbList">POWER</button>
+            <button type="button" data-leaderboard-mode="power" aria-pressed="false" aria-controls="lbList">ENDLESS</button>
           </div>
           <div class="station-columns" aria-hidden="true"><span>#</span><span>PLAYER</span><span>POINTS</span></div>
           <ol id="lbList" tabindex="0" aria-label="Online top 10 scores"></ol>
@@ -1307,7 +1306,7 @@ let upgrades = {}, nextUpgradeScore = 5000, upgradeOffers = [], upgradeSelection
 let shots = [], snowCharge = 0, extraHops = 0, flightHits = 0, rescueCharges = 0;
 let bombs = [], bombRain = false, bombTimer = 0;
 let gangTimer = 5;
-const rank = id => runMode === 'power' ? upgrades[id] || 0 : 0;
+const rank = id => upgrades[id] || 0;
 const upgradeOverlay = document.getElementById('upgradeOverlay');
 const upgradeCards = document.getElementById('upgradeCards');
 function resetUpgrades() {
@@ -1320,7 +1319,7 @@ function resetUpgrades() {
   upgradeOverlay.hidden = true;
 }
 function offerUpgrade() {
-  if (runMode !== 'power' || mode !== 'playing' || score < nextUpgradeScore) return;
+  if (mode !== 'playing' || score < nextUpgradeScore) return;
   mode = 'upgrading'; keys.clear(); touch = null;
   gameAudio.hush();
   upgradeOffers = upgradeCatalog.filter(([id]) => !['mix', 'repair'].includes(id) || !rank(id));
@@ -1995,7 +1994,7 @@ function renderLeaderboardStatus() {
 }
 function renderLeaderboard() {
   const top = onlineScores.filter(entry => entry.mode === leaderboardMode).slice(0, LEADERBOARD_SHOW);
-  lbUI.list.setAttribute('aria-label', `${leaderboardMode === 'power' ? 'Power' : 'Story'} online top 10 scores`);
+  lbUI.list.setAttribute('aria-label', `${leaderboardMode === 'power' ? 'Endless' : 'Story'} online top 10 scores`);
   for (const button of document.querySelectorAll('[data-leaderboard-mode]')) {
     button.setAttribute('aria-pressed', String(button.dataset.leaderboardMode === leaderboardMode));
   }
@@ -2341,8 +2340,8 @@ function updateModePicker() {
   powerButton.setAttribute('aria-pressed', String(selectedGameMode === 'power'));
   document.getElementById('normalMode').setAttribute('aria-pressed', String(selectedGameMode === 'normal'));
   document.getElementById('modeHint').textContent = selectedGameMode === 'power'
-    ? 'Power: choose upgrades as your score grows.'
-    : 'Normal: downhill survival, no powers.';
+    ? 'Endless: no story scenes; chase upgrades and survive.'
+    : 'Story: story scenes, powers, and upgrade choices.';
 }
 function selectGameMode(choice) {
   if (mode !== 'ready' && mode !== 'over') return;
@@ -2388,7 +2387,7 @@ function togglePause() {
   closePauseMenus();
   if (mode === 'paused') {
     gameAudio.hush();
-    pauseUI.viewPowers.hidden = runMode !== 'power';
+    pauseUI.viewPowers.hidden = false;
     pauseUI.pauseMenu.hidden = false;
     pauseUI.resumeRun.focus({ preventScroll: true });
   } else ui.pause.focus({ preventScroll: true });
@@ -2448,7 +2447,7 @@ function showSound() {
   pauseUI.soundPopup.querySelector('input').focus({ preventScroll: true });
 }
 function showPowers() {
-  if (mode !== 'paused' || runMode !== 'power') return;
+  if (mode !== 'paused') return;
   pauseUI.powersList.replaceChildren();
   for (const [id, name, category, , description] of upgradeCatalog) {
     const entry = document.createElement('article');
@@ -2559,7 +2558,7 @@ pauseUI.cheatForm.addEventListener('submit', e => {
     pauseUI.cheatResult.textContent = 'Unknown code. Try again.';
     return;
   }
-  pauseUI.cheatResult.textContent = 'Power is available! Go back and select Power.';
+  pauseUI.cheatResult.textContent = 'Endless is ready! Go back and select Endless.';
   pauseUI.cheatCode.value = '';
 });
 pauseUI.quitRun.addEventListener('click', quitRun);
