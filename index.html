@@ -699,6 +699,35 @@ body[data-ui-theme="news"] #overlay .station-board .station-columns { font-famil
   .joystick-knob { width: 48px; height: 48px; margin: -24px 0 0 -24px; }
   #mobileControls .jump-button { width: 64px; height: 64px; margin: 0 8px 14px 0; font-size: 7px; }
 }
+/* Story conversations: original pixel portraits beside a parchment dialogue box. */
+#storyDialogue { position: fixed; inset: 0; z-index: 100; display: flex; align-items: flex-end; justify-content: center; padding: 24px; background: #10203940; }
+#storyDialogue[hidden] { display: none; }
+body:has(#storyDialogue:not([hidden])) > header,
+body:has(#storyDialogue:not([hidden])) main > footer,
+body:has(#storyDialogue:not([hidden])) .mountain > :not(#game):not(#rotateNotice) { visibility: hidden !important; pointer-events: none !important; }
+.story-window { display: flex; align-items: stretch; width: min(900px, 100%); border: 3px solid #242d40; border-radius: 8px; background: #fff4d7; box-shadow: 0 0 0 2px #e9d6a6, 0 6px 0 #14213a80; overflow: hidden; }
+#storyPortrait { width: 192px; height: 240px; flex: 0 0 auto; align-self: flex-end; image-rendering: pixelated; border-right: 3px solid #242d40; }
+.story-copy { flex: 1; min-width: 0; padding: 20px; display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
+#storySpeaker { font-family: 'Press Start 2P', monospace; font-size: 12px; line-height: 1.6; color: #97432f; margin: 0; }
+#storyText { font-family: 'Press Start 2P', monospace; font-size: 12px; font-weight: 400; line-height: 2; color: #253049; margin: 0; overflow-wrap: anywhere; }
+#storyNext { margin-top: auto; align-self: flex-end; font-family: 'Press Start 2P', monospace; font-size: 9px; min-height: 36px; padding: 8px 12px; cursor: pointer; }
+.story-curse { display: inline-flex; align-items: center; gap: 3px; color: #9d332b; white-space: nowrap; transform-origin: center; animation: story-curse-jolt .14s steps(1, end) infinite; }
+.story-curse svg { width: 14px; height: 14px; shape-rendering: crispEdges; }
+@keyframes story-curse-jolt { 0%, 24%, 100% { transform: rotate(0deg); } 12% { transform: rotate(1deg); } }
+@media (prefers-reduced-motion: reduce) { .story-curse { animation: none; } }
+@media (max-width: 700px), (max-height: 500px) {
+  #storyDialogue { padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
+  #storyPortrait { width: 96px; height: 120px; }
+  .story-copy { padding: 12px; gap: 8px; }
+  #storySpeaker { font-size: 9px; }
+  #storyText { font-size: 8px; line-height: 1.8; }
+  #storyNext { font-size: 8px; min-height: 44px; min-width: 112px; touch-action: manipulation; }
+  .story-window { max-height: calc(100dvh - 24px); overflow-y: auto; }
+}
+@media (orientation: portrait) and (pointer: coarse), (orientation: portrait) and (max-width: 700px) {
+  #storyDialogue:not([hidden]) { visibility: hidden; pointer-events: none; }
+}
+.story-copy #storyText { white-space: pre-line; }
 
 </style></head>
 <body data-ui-theme="news">
@@ -869,7 +898,7 @@ body[data-ui-theme="news"] #overlay .station-board .station-columns { font-famil
       <div class="eyebrow">NO RIDER. NO RULES.</div>
       <h1>SNOWFREE</h1>
       <div class="mode-picker" role="group" aria-label="Game mode">
-        <button id="normalMode" type="button" aria-pressed="true">NORMAL</button>
+        <button id="normalMode" type="button" aria-pressed="true">STORY</button>
         <button id="powerMode" type="button" aria-pressed="false" aria-describedby="modeHint">POWER</button>
       </div>
       <div class="menu-actions">
@@ -885,7 +914,7 @@ body[data-ui-theme="news"] #overlay .station-board .station-columns { font-famil
             <button id="lbRefresh" type="button" aria-label="Refresh online leaderboard" title="Refresh">↻</button>
           </div>
           <div class="lb-mode-picker" role="group" aria-label="Leaderboard mode">
-            <button type="button" data-leaderboard-mode="normal" aria-pressed="true" aria-controls="lbList">NORMAL</button>
+            <button type="button" data-leaderboard-mode="normal" aria-pressed="true" aria-controls="lbList">STORY</button>
             <button type="button" data-leaderboard-mode="power" aria-pressed="false" aria-controls="lbList">POWER</button>
           </div>
           <div class="station-columns" aria-hidden="true"><span>#</span><span>PLAYER</span><span>POINTS</span></div>
@@ -1184,7 +1213,32 @@ const gameAudio = (() => {
       oscillator.onended = () => { oscillator.disconnect(); filter.disconnect(); gain.disconnect(); };
       oscillator.start(time); oscillator.stop(time + duration + .01);
     }
-    if (kind === 'hop') {
+    function crackle(duration, frequency, endFrequency, volume, type) {
+      const source = context.createBufferSource(), filter = context.createBiquadFilter(), gain = context.createGain();
+      source.buffer = musicNoise;
+      source.playbackRate.value = .65;
+      filter.type = type;
+      filter.Q.value = 1.8;
+      filter.frequency.setValueAtTime(frequency, now);
+      filter.frequency.exponentialRampToValueAtTime(endFrequency, now + duration);
+      gain.gain.setValueAtTime(volume, now);
+      gain.gain.exponentialRampToValueAtTime(.0001, now + duration);
+      source.connect(filter); filter.connect(gain); gain.connect(master);
+      source.onended = () => { source.disconnect(); filter.disconnect(); gain.disconnect(); };
+      source.start(now); source.stop(now + duration);
+    }
+    if (kind === 'helicopter-hit') {
+      // Dissonant chip tones and crunchy noise suggest metal snapping apart.
+      note(1870, 560, 0, .19, .22, 'square', 4800);
+      note(2630, 910, .012, .13, .14, 'square', 5500);
+      note(1130, 240, .05, .2, .15, 'square', 3000);
+      crackle(.22, 4200, 850, .35, 'bandpass');
+    } else if (kind === 'helicopter-explosion') {
+      // Bit-crushed noise tail over a descending arcade explosion boom.
+      crackle(.7, 5200, 140, .65, 'lowpass');
+      note(170, 28, 0, .55, .55, 'triangle', 1100);
+      note(320, 45, .025, .3, .23, 'square', 1500);
+    } else if (kind === 'hop') {
       note(180, 620, 0, .12, .23, 'square', 2000);
       note(110, 250, 0, .08, .18, 'triangle', 900);
     } else if (kind === 'landing') {
@@ -1603,6 +1657,174 @@ function drawUpgradeEffects() {
 
 </script>
 <script>
+/* Original pixel portraits and local Story-mode conversations. */
+const storyDialogue = (() => {
+  const names = { board: 'Snowboard', rider: 'Snowboarder', boss: 'Snow Patrol Boss' };
+  // Censored words are never inserted into the dialogue DOM or accessibility text.
+  const opening = [
+    ['board', 'These {curse} skiers! I WILL KILL THEM! I WILL KILL THEM ALL!'],
+    ['rider', 'OH {curse}!\nMY SNOWBOARD FELL!'],
+    ['board', "I'M COMING FOR YOOOOOOUUUU!!!!!!!!!"]
+  ];
+  const alerts = {
+    1: 'WE GOT A LOOSE SNOWBOARD ON THE MOUNTAIN BOYS GO GET IT!',
+    2: 'WHAT THE {curse} ARE YOU DOING BOYS? GET THAT BOARD!',
+    3: 'THIS {curse} SNOWBOARD IS DESTROYING OUR MOUNTAIN! JUST GET THE {curse} THING FOR {curse} SAKE!',
+    4: 'EVERYONE GO AFTER THAT {curse} THING!',
+    5: 'Send the Choppeeeeeeeeeeeeeeeeeer!'
+  };
+  const panel = document.createElement('section');
+  panel.id = 'storyDialogue'; panel.hidden = true;
+  panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-modal', 'true');
+  panel.setAttribute('aria-labelledby', 'storySpeaker');
+  panel.setAttribute('aria-describedby', 'storyText');
+  panel.innerHTML = '<div class="story-window"><canvas id="storyPortrait" width="64" height="80" aria-hidden="true"></canvas><div class="story-copy"><h2 id="storySpeaker"></h2><p id="storyText"></p><button id="storyNext" type="button">NEXT ▶</button></div></div>';
+  document.querySelector('main').append(panel);
+  const portrait = panel.querySelector('canvas'), ctx = portrait.getContext('2d');
+  const speaker = panel.querySelector('h2'), text = panel.querySelector('p'), next = panel.querySelector('button');
+  let queue = [], seen = new Set();
+
+  function drawPortrait(character) {
+    const rect = (x, y, w, h, color) => { ctx.fillStyle = color; ctx.fillRect(x, y, w, h); };
+    const shape = (points, color) => {
+      ctx.fillStyle = color; ctx.beginPath();
+      points.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+      ctx.closePath(); ctx.fill();
+    };
+    ctx.clearRect(0, 0, 64, 80);
+    rect(0, 0, 64, 80, '#203750');
+    rect(4, 4, 56, 72, '#345570');
+    rect(4, 61, 56, 15, '#b8d9e3');
+    if (character === 'board') {
+      // Literal yellow/red snowboard, with bindings instead of a human face.
+      shape([[29,5],[40,5],[46,11],[46,65],[40,74],[29,74],[23,67],[23,13]], '#222638');
+      shape([[30,8],[38,8],[43,13],[43,64],[38,71],[30,71],[26,65],[26,14]], '#f6ce3c');
+      rect(27,17,16,7,'#c93235'); rect(27,55,16,8,'#c93235');
+      shape([[27,20],[43,32],[43,39],[27,27]], '#e94b3d');
+      rect(30,30,10,10,'#242f43'); rect(31,31,7,3,'#a4aebe');
+      rect(30,45,10,10,'#242f43'); rect(31,46,7,3,'#a4aebe');
+      rect(28,12,2,10,'#fff1a2'); rect(39,59,2,6,'#f78b32');
+    } else if (character === 'rider') {
+      shape([[8,80],[8,62],[21,53],[42,53],[56,64],[59,80]], '#182c44');
+      shape([[13,80],[13,65],[23,58],[40,58],[51,66],[54,80]], '#de6939');
+      rect(27,48,12,13,'#dfab83');
+      shape([[20,21],[42,21],[46,32],[43,47],[35,55],[26,52],[19,40]], '#f4cca2');
+      rect(19,31,4,10,'#dcaa83'); rect(39,40,4,7,'#dfaa7f');
+      shape([[17,20],[23,14],[42,17],[46,29],[40,27],[39,34],[34,26],[28,30],[25,25],[20,34]], '#efc653');
+      rect(24,23,3,9,'#fff09a'); rect(40,26,3,11,'#d89932');
+      shape([[17,19],[18,11],[24,6],[37,5],[44,10],[46,20]], '#287c96');
+      rect(16,18,31,7,'#173e59'); rect(19,18,25,2,'#4eabc0');
+      rect(21,17,22,9,'#111d30'); rect(23,19,8,5,'#83d9e9'); rect(33,19,8,5,'#83d9e9');
+      rect(24,19,5,2,'#e2ffff'); rect(34,19,5,2,'#e2ffff');
+      rect(27,34,3,3,'#283448'); rect(37,34,3,3,'#283448');
+      rect(32,40,3,2,'#c38e6d'); rect(30,46,7,3,'#55352f');
+      rect(25,57,4,20,'#ffe4a4'); rect(38,57,3,23,'#963b2f');
+    } else {
+      // Stern, square-jawed patrol commander with swept-back hair and huge traps.
+      shape([[0,80],[0,55],[6,49],[18,45],[23,38],[42,38],[47,45],[58,49],[64,55],[64,80]], '#20212b');
+      // Fully zipped insulated patrol jacket: broad shoulders and covered arms.
+      shape([[1,80],[1,56],[7,51],[19,47],[25,40],[40,40],[46,47],[57,51],[63,56],[63,80]], '#b82d3c');
+      shape([[3,57],[9,52],[18,51],[15,63],[11,69],[2,68]], '#e05055');
+      shape([[48,51],[56,53],[61,58],[62,69],[53,68],[49,63]], '#cf3e4a');
+      shape([[3,71],[10,70],[13,75],[12,80],[2,80]], '#8b2638');
+      shape([[54,71],[61,72],[62,80],[52,80],[51,76]], '#802639');
+      shape([[19,49],[25,43],[28,56],[22,60],[16,58]], '#e05055');
+      shape([[40,43],[46,49],[49,59],[40,57],[36,55]], '#c73b48');
+      rect(15,61,14,19,'#c83a47'); rect(35,61,14,19,'#ac2d3d');
+      rect(13,62,2,18,'#702738'); rect(49,62,2,18,'#702738');
+      // Cream shoulder stripes, pocket seams, and ski-patrol cross patch.
+      shape([[4,56],[8,53],[18,50],[19,53],[9,56],[4,59]], '#eee6d6');
+      shape([[46,50],[56,53],[61,57],[61,60],[55,56],[46,53]], '#d6d9d6');
+      rect(18,67,9,2,'#702738'); rect(18,69,9,1,'#e65b60');
+      rect(37,60,10,11,'#27384b');
+      rect(39,64,6,3,'#fff3dc'); rect(41,62,2,7,'#fff3dc');
+      rect(25,39,15,8,'#b58068');
+      shape([[22,43],[27,45],[32,49],[37,45],[42,43],[43,51],[36,57],[28,57],[21,51]], '#223347');
+      shape([[23,44],[27,47],[30,50],[28,53],[23,50]], '#506275');
+      rect(31,50,3,30,'#192b3b'); rect(32,53,1,27,'#b6c4cd');
+      rect(31,56,3,4,'#e4e7df');
+      // Angular cheekbones, broad chin and a closed, unsmiling mouth.
+      shape([[19,14],[25,9],[40,10],[46,16],[46,31],[42,40],[37,45],[27,45],[21,39],[18,28]], '#c59478');
+      shape([[23,16],[30,13],[40,15],[42,26],[37,33],[26,32],[22,25]], '#e4b796');
+      shape([[20,28],[26,30],[28,35],[24,37],[21,34]], '#a57361');
+      shape([[40,29],[44,25],[43,35],[39,39],[37,34]], '#956651');
+      shape([[26,39],[38,39],[37,43],[28,43]], '#d6a88b');
+      // Slicked-back dark hair with stepped highlights, not a rounded beanie.
+      shape([[17,24],[17,12],[21,6],[29,3],[40,4],[46,8],[48,17],[45,28],[42,24],[42,16],[38,12],[25,13],[21,19],[21,28]], '#24252a');
+      shape([[21,12],[24,7],[34,5],[42,7],[35,7],[27,10]], '#4c4c4e');
+      shape([[29,12],[35,8],[43,9],[45,12],[38,10],[34,12]], '#3c3c40');
+      rect(18,23,3,9,'#343034'); rect(43,23,3,8,'#343034');
+      // Downward-slanted heavy brows and narrow eyes create a hard stare.
+      shape([[23,21],[27,21],[31,24],[30,26],[25,24],[23,24]], '#332d2d');
+      shape([[35,24],[39,21],[42,21],[42,24],[37,25],[35,26]], '#332d2d');
+      rect(25,26,5,2,'#e8ddc6'); rect(36,26,5,2,'#e8ddc6');
+      rect(28,26,2,2,'#243541'); rect(36,26,2,2,'#243541');
+      rect(31,25,3,7,'#efc2a0'); rect(30,32,6,2,'#96644f');
+      // Gold-rimmed aviators with dark, tapered lenses and a double bridge.
+      rect(20,24,4,1,'#d4af67'); rect(42,24,4,1,'#d4af67');
+      shape([[23,23],[30,23],[31,25],[30,30],[27,32],[24,30],[22,26]], '#d4af67');
+      shape([[35,23],[42,23],[44,26],[42,30],[39,32],[36,30],[34,25]], '#d4af67');
+      shape([[24,24],[29,24],[30,26],[29,29],[27,30],[25,29],[23,26]], '#1a2c3c');
+      shape([[36,24],[41,24],[43,26],[41,29],[39,30],[37,29],[35,26]], '#1a2c3c');
+      rect(30,24,5,1,'#e5c47f'); rect(31,26,3,1,'#d4af67');
+      rect(24,25,4,1,'#7896a3'); rect(36,25,4,1,'#7896a3');
+      // Thick 1970s mustache: no beard or smiling teeth.
+      shape([[26,34],[30,33],[33,34],[36,33],[40,35],[41,39],[37,38],[33,37],[29,38],[24,39],[24,36]], '#30282a');
+      rect(27,34,3,1,'#594039'); rect(36,34,3,1,'#594039');
+      rect(29,39,8,1,'#624138'); rect(30,41,6,1,'#e5b596');
+    }
+  }
+  function showLine() {
+    const [character, line] = queue[0];
+    drawPortrait(character); speaker.textContent = names[character];
+    text.replaceChildren();
+    line.split('{curse}').forEach((part, i) => {
+      if (i) {
+        const curse = document.createElement('span');
+        curse.className = 'story-curse'; curse.setAttribute('role', 'img');
+        curse.setAttribute('aria-label', 'censored');
+        curse.innerHTML = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 0h6v1h2v7H9v3H3V8H1V1h2z" fill="currentColor"/><path d="M3 3h2v3H3zm4 0h2v3H7zM5 7h2v2H5zM4 10h1v2H4zm3 0h1v2H7z" fill="#fff4d7"/></svg><span aria-hidden="true">#@!*</span>';
+        text.append(curse);
+      }
+      text.append(document.createTextNode(part));
+    });
+    next.textContent = queue.length > 1 ? 'NEXT ▶' : 'CONTINUE ▶';
+    next.focus({ preventScroll: true });
+  }
+  function open(lines) {
+    queue.push(...lines);
+    if (!panel.hidden) return;
+    mode = 'dialogue'; keys.clear(); touch = null; clearMobileControls();
+    gameAudio.hush(); panel.hidden = false; showLine();
+  }
+  function advance() {
+    if (portraitGate.matches) return;
+    queue.shift();
+    if (queue.length) return showLine();
+    panel.hidden = true; keys.clear(); touch = null;
+    mode = 'playing'; gameAudio.unlock(); ui.pause.focus({ preventScroll: true });
+  }
+  next.addEventListener('click', advance);
+  window.addEventListener('keydown', e => {
+    if (panel.hidden) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    if (!e.repeat && (e.key === 'Enter' || e.key === ' ')) advance();
+    if (e.key === 'Tab') next.focus();
+  }, true);
+  return {
+    start() {
+      queue = []; seen = new Set(); panel.hidden = true;
+      if (runMode === 'normal') open(opening);
+    },
+    wanted(level) {
+      if (runMode !== 'normal' || seen.has(level) || !alerts[level]) return;
+      seen.add(level); open([['boss', alerts[level]]]);
+    }
+  };
+})();
+
+</script>
+<script>
 /* Original canvas artwork; dependency-free browser prototype. */
 'use strict';
 const canvas = document.querySelector('#game');
@@ -1758,7 +1980,7 @@ function renderLeaderboardStatus() {
 }
 function renderLeaderboard() {
   const top = onlineScores.filter(entry => entry.mode === leaderboardMode).slice(0, LEADERBOARD_SHOW);
-  lbUI.list.setAttribute('aria-label', `${leaderboardMode === 'power' ? 'Power' : 'Normal'} online top 10 scores`);
+  lbUI.list.setAttribute('aria-label', `${leaderboardMode === 'power' ? 'Power' : 'Story'} online top 10 scores`);
   for (const button of document.querySelectorAll('[data-leaderboard-mode]')) {
     button.setAttribute('aria-pressed', String(button.dataset.leaderboardMode === leaderboardMode));
   }
@@ -2053,18 +2275,19 @@ function updateWanted() {
   heat = level; escapeStars = Math.max(escapeStars, level); escapeTime = 0;
   patrolPending = true; patrolTimer = 4 / (1 + .5 * rank('enemy'));
   toast(`WANTED LEVEL ${level}!`);
+  storyDialogue.wanted(level);
 }
 function deployPatrol(level) {
   // Reinforce the pursuit without removing existing or attached patrollers.
   patrolPending = false;
   if (level === 5) {
-    helicopter = { x: board.x, y: -40, entering: true, dropTimer: 3 };
+    helicopter = { x: board.x, y: -40, entering: true, dropTimer: 3, hp: 2, hitThisJump: false };
     helicopterRespawnAt = null;
     toast('HELICOPTER INBOUND!');
     return;
   }
   helicopter = null;
-  const count = level === 1 ? 1 : level === 4 ? 4 : 3;
+  const count = level === 1 ? 1 : level === 4 ? 6 : 3;
   for (let i = 0; i < count; i++) {
     const side = i % 2 ? 1 : -1;
     const e = spawn('patrol', board.x + side * Math.max(35, width / 2 - 22), Math.min(height - 24, board.y + 60 + Math.floor(i / 2) * 45));
@@ -2140,6 +2363,7 @@ function start() {
   ensureTerrain();
   mode = 'playing'; ui.overlay.hidden = true; resultsUI.screen.hidden = true; ui.pause.textContent = pauseLabel();
   toast('RUNAWAY BOARD! Hit skiers to start trouble.'); updateHUD();
+  storyDialogue.start();
 }
 function togglePause() {
   gameAudio.unlock();
@@ -2637,6 +2861,7 @@ function update(dt) {
   hopCooldown = Math.max(0, hopCooldown - dt);
   const wasAirborne = airTime > 0;
   airTime = Math.max(0, airTime - dt);
+  if (helicopter && airTime === 0) helicopter.hitThisJump = false;
   if (wasAirborne && airTime === 0) {
     burst(board.x, board.y, '#ccc');
     gameAudio.effect('landing');
@@ -2687,6 +2912,7 @@ function update(dt) {
   const wanted = stars(); patrolTimer -= dt;
   if (wanted > 0 && patrolPending && patrolTimer <= 0) deployPatrol(wanted);
   if (helicopter) {
+    helicopter.hitFlash = Math.max(0, (helicopter.hitFlash || 0) - dt);
     // Air support follows the camera, so neither downhill speed nor carving
     // can leave it offscreen and stop the level-five reinforcement stream.
     helicopter.x = board.x + Math.sin(elapsed * .7) * Math.min(45, width * .15);
@@ -2711,7 +2937,7 @@ function update(dt) {
   } else if (heat === 5 && helicopterRespawnAt !== null && score >= helicopterRespawnAt) {
     // Air support returns on a score cadence once the previous craft is down.
     // Only one helicopter can be active at a time.
-    helicopter = { x: board.x, y: -40, entering: true, dropTimer: 3 };
+    helicopter = { x: board.x, y: -40, entering: true, dropTimer: 3, hp: 2, hitThisJump: false };
     helicopterRespawnAt = score + HELICOPTER_RESPAWN_SCORE;
     toast('HELICOPTER INBOUND!');
   }
@@ -2864,18 +3090,28 @@ function update(dt) {
       gameAudio.effect('rainbow');
     }
   }
-  if (helicopter && airTime > 0 && jumpKind === 'ramp' && jumpHeight() > .35
+  if (helicopter && !helicopter.hitThisJump && airTime > 0 && jumpKind === 'ramp' && jumpHeight() > .35
     && Math.abs(helicopter.x - board.x) < 55
     && Math.abs((helicopter.y - 60) - (board.y - jumpHeight() * 32)) < 36) {
-    const wreck = spawn('helicopterWreck', helicopter.x, helicopter.y);
-    wreck.crashTime = .7;
-    helicopter = null;
-    burst(wreck.x, wreck.y - 60, '#ff9100');
-    helicopterRespawnAt = score + HELICOPTER_RESPAWN_SCORE;
-    awardScore(1000, 'helicopter');
-    helicopterUpgrades(wreck);
-    toast('HELICOPTER DOWN! +1000');
-    closePatrol = entities.some(e => e.type === 'patrol' && !e.hit && Math.hypot(e.x - board.x, e.y - board.y) < 270);
+    helicopter.hitThisJump = true;
+    helicopter.hp--;
+    helicopter.hitFlash = .65;
+    gameAudio.effect('helicopter-hit');
+    if (helicopter.hp > 0) {
+      burst(helicopter.x, helicopter.y - 60, '#ff9100');
+      toast('HELICOPTER HIT! 50% HP');
+    } else {
+      const wreck = spawn('helicopterWreck', helicopter.x, helicopter.y);
+      wreck.crashTime = .7;
+      gameAudio.effect('helicopter-explosion');
+      helicopter = null;
+      burst(wreck.x, wreck.y - 60, '#ff9100');
+      helicopterRespawnAt = score + HELICOPTER_RESPAWN_SCORE;
+      awardScore(1000, 'helicopter');
+      helicopterUpgrades(wreck);
+      toast('HELICOPTER DOWN! +1000');
+      closePatrol = entities.some(e => e.type === 'patrol' && !e.hit && Math.hypot(e.x - board.x, e.y - board.y) < 270);
+    }
   }
   for (const e of entities) {
     if (e.hit || e.type === 'snowboarder' || e.type === 'jump' || e.type === 'helicopterWreck' || e.dropTime > 0) continue;
@@ -3398,7 +3634,10 @@ function draw() {
 }
 function drawHelicopter(craft = helicopter, altitude = 60) {
   const { x, y } = craft;
+  ctx.save();
   ctx.globalAlpha = .18; pixel(x - 24, y, '#333', 48, 12); ctx.globalAlpha = 1;
+  // Visual feedback only: damage eligibility never depends on this timer.
+  if (craft.hitFlash > 0 && Math.floor(craft.hitFlash * 30) % 2) ctx.globalAlpha = .25;
   const top = y - altitude;
   pixel(x - 44, top - 3, '#b52b26', 31, 7);
   pixel(x - 46, top - 12, '#333', 5, 22);
@@ -3411,6 +3650,38 @@ function drawHelicopter(craft = helicopter, altitude = 60) {
   pixel(x - 2, top - 20, '#333', 4, 8);
   const rotorWidth = 30 + Math.abs(Math.sin(elapsed * 45)) * 40;
   pixel(x - rotorWidth / 2, top - 22, '#333', rotorWidth, 3);
+  if (craft === helicopter) {
+    ctx.save();
+    ctx.fillStyle = '#9cdef5';
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = .375;
+    ctx.lineJoin = 'miter';
+    for (let i = 0; i < craft.hp; i++) {
+      const left = x - 13 + i * 14, barTop = top - 31;
+      const sheen = ctx.createLinearGradient(0, barTop, 0, barTop + 3);
+      sheen.addColorStop(0, '#e9fbff');
+      sheen.addColorStop(.45, '#b8edff');
+      sheen.addColorStop(.5, '#9cdef5');
+      sheen.addColorStop(1, '#65afd3');
+      ctx.fillStyle = sheen;
+      ctx.shadowColor = 'rgba(25, 65, 95, .3)';
+      ctx.shadowBlur = 2;
+      ctx.shadowOffsetY = 1;
+      ctx.beginPath();
+      ctx.moveTo(left + 1.5, barTop);
+      ctx.lineTo(left + 10.5, barTop);
+      ctx.lineTo(left + 12, barTop + 1.5);
+      ctx.lineTo(left + 10.5, barTop + 3);
+      ctx.lineTo(left + 1.5, barTop + 3);
+      ctx.lineTo(left, barTop + 1.5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.shadowColor = 'transparent';
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+  ctx.restore();
 }
 function frame(now) {
   mobileControls.hidden = mode !== 'playing';
