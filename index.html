@@ -2577,7 +2577,7 @@ window.addEventListener('keydown', e => {
     const panel = optionsUI.optionsPopup;
     if (e.key === 'Escape') { e.preventDefault(); closeOptions(); }
     else if (e.key === 'Tab') {
-      const controls = [...panel.querySelectorAll('button, input')].filter(el => !el.disabled && (el.type !== 'radio' || el.checked));
+      const controls = [...panel.querySelectorAll('button, input')].filter(el => !el.disabled && (el.type !== 'radio' || el.checked) && getComputedStyle(el).display !== 'none');
       e.preventDefault();
       controls[(controls.indexOf(document.activeElement) + (e.shiftKey ? -1 : 1) + controls.length) % controls.length].focus();
     }
@@ -2595,7 +2595,7 @@ window.addEventListener('keydown', e => {
   if (!pauseUI.cheatsPopup.hidden) {
     if (e.key === 'Escape') { e.preventDefault(); closeCheats(); }
     else if (e.key === 'Tab') {
-      const controls = [...pauseUI.cheatsPopup.querySelectorAll('button, input')];
+      const controls = [...pauseUI.cheatsPopup.querySelectorAll('button, input')].filter(el => getComputedStyle(el).display !== 'none');
       e.preventDefault();
       controls[(controls.indexOf(document.activeElement) + (e.shiftKey ? controls.length - 1 : 1)) % controls.length].focus();
     }
