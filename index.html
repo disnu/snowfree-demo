@@ -2219,7 +2219,7 @@ function resize() {
   const oldBoardY = board.y;
   const viewport = canvas.getBoundingClientRect();
   cameraZoom = compactView()
-    ? Math.max(.75, Math.min(CAMERA_ZOOM, viewport.width / 800))
+    ? Math.max(.68, Math.min(CAMERA_ZOOM, viewport.width / 880))
     : Math.min(CAMERA_ZOOM, Math.max(.8, viewport.width / 360));
   width = viewport.width / cameraZoom; height = viewport.height / cameraZoom;
   const dpr = Math.min(devicePixelRatio || 1, 2);
