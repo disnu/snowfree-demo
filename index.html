@@ -2701,6 +2701,20 @@ function syncOrientationGate() {
 if (portraitGate.addEventListener) portraitGate.addEventListener('change', syncOrientationGate);
 else if (portraitGate.addListener) portraitGate.addListener(syncOrientationGate);
 syncOrientationGate();
+// Safari can still double-tap zoom even with the viewport lock; cancel the second nearby tap.
+let lastTapEnd = 0, lastTapX = 0, lastTapY = 0;
+document.addEventListener('touchstart', event => { if (event.touches.length > 1) lastTapEnd = 0; }, { passive: true });
+document.addEventListener('touchend', event => {
+  if (event.touches.length || !event.changedTouches.length) return;
+  const touch = event.changedTouches[0], now = performance.now();
+  if (now - lastTapEnd <= 320 && Math.hypot(touch.clientX - lastTapX, touch.clientY - lastTapY) <= 32) {
+    if (event.cancelable) event.preventDefault();
+    lastTapEnd = 0;
+  } else {
+    lastTapEnd = now; lastTapX = touch.clientX; lastTapY = touch.clientY;
+  }
+}, { passive: false, capture: true });
+document.addEventListener('gesturestart', event => { if (event.cancelable) event.preventDefault(); }, { passive: false });
 function pointer(e) { const r = canvas.getBoundingClientRect(); touch = { x: (e.clientX - r.left) / cameraZoom, y: (e.clientY - r.top) / cameraZoom }; }
 canvas.addEventListener('pointerdown', e => {
   gameAudio.unlock();
