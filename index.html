@@ -732,9 +732,11 @@ body:has(#storyDialogue:not([hidden])) .mountain > :not(#game):not(#rotateNotice
 }
 /* Mobile browsing stays fixed: no pinch zoom, text selection, or long-press callouts. */
 @media (pointer: coarse), (max-width: 700px) {
-  html, body { touch-action: pan-x pan-y; overscroll-behavior: none; }
+  html, body { touch-action: pan-x pan-y; overscroll-behavior: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
   body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
-  input, textarea { -webkit-user-select: text; user-select: text; }
+  input, textarea { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
+  /* The stick never exposes selectable content, so iOS cannot raise its magnifier there. */
+  #joystick, #joystick *, #mobileControls .jump-button { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-user-drag: none; }
 }
 .story-copy #storyText { white-space: pre-line; }
 
@@ -2707,7 +2709,14 @@ else if (portraitGate.addListener) portraitGate.addListener(syncOrientationGate)
 syncOrientationGate();
 // Safari can still double-tap zoom even with the viewport lock; cancel the second nearby tap.
 let lastTapEnd = 0, lastTapX = 0, lastTapY = 0;
-document.addEventListener('touchstart', event => { if (event.touches.length > 1) lastTapEnd = 0; }, { passive: true });
+const editableTarget = event => event.target && event.target.closest && event.target.closest('input, textarea');
+document.addEventListener('touchstart', event => {
+  if (event.touches.length > 1) {
+    lastTapEnd = 0;
+    // Multi-touch on Safari starts a page gesture; block it before the pinch begins.
+    if (event.cancelable) event.preventDefault();
+  }
+}, { passive: false });
 document.addEventListener('touchend', event => {
   if (event.touches.length || !event.changedTouches.length) return;
   const touch = event.changedTouches[0], now = performance.now();
@@ -2718,7 +2727,20 @@ document.addEventListener('touchend', event => {
     lastTapEnd = now; lastTapX = touch.clientX; lastTapY = touch.clientY;
   }
 }, { passive: false, capture: true });
-document.addEventListener('gesturestart', event => { if (event.cancelable) event.preventDefault(); }, { passive: false });
+// Stop pinch/pinch-out and Safari page scaling everywhere; menus scroll with one finger.
+const blockGesture = event => { if (event.cancelable) event.preventDefault(); };
+document.addEventListener('touchmove', event => {
+  if (event.touches.length > 1 || (event.scale !== undefined && event.scale !== 1)) blockGesture(event);
+}, { passive: false });
+for (const name of ['gesturestart', 'gesturechange', 'gestureend']) {
+  document.addEventListener(name, blockGesture, { passive: false });
+}
+// Long-press magnifier and callouts come from selection; keep them off the game surface.
+const coarsePointer = window.matchMedia ? window.matchMedia('(pointer: coarse)') : { matches: false };
+document.addEventListener('selectstart', event => { if (coarsePointer.matches && !editableTarget(event)) event.preventDefault(); });
+document.addEventListener('dragstart', event => { if (coarsePointer.matches && !editableTarget(event)) event.preventDefault(); });
+document.addEventListener('contextmenu', event => { if (coarsePointer.matches && !editableTarget(event)) event.preventDefault(); });
+
 function pointer(e) { const r = canvas.getBoundingClientRect(); touch = { x: (e.clientX - r.left) / cameraZoom, y: (e.clientY - r.top) / cameraZoom }; }
 canvas.addEventListener('pointerdown', e => {
   gameAudio.unlock();
