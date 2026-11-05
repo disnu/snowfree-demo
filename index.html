@@ -2815,6 +2815,22 @@ function ensureTerrain() {
       if (e.type === 'snow') e.snowShape = Math.floor(random() * SNOW_SHAPES.length);
       if (e.type === 'tree') e.treeShape = Math.floor(random() * TREE_SHAPES.length);
       if (e.type === 'ice') e.iceShape = Math.floor(random() * ICE_SHAPES.length);
+      if (e.type === 'ice' || e.type === 'jump') {
+        const sizeOf = item => item.type === 'ice'
+          ? { halfWidth: ICE_SHAPES[item.iceShape].width / 2, halfHeight: ICE_SHAPES[item.iceShape].height / 2 }
+          : { halfWidth: 35, halfHeight: 12 };
+        const bounds = sizeOf(e);
+        const overlaps = entities.some(other => {
+          if (other === e || (other.type !== 'ice' && other.type !== 'jump')) return false;
+          const otherBounds = sizeOf(other);
+          return Math.abs(other.x - e.x) < bounds.halfWidth + otherBounds.halfWidth + 4
+            && Math.abs(other.y - e.y) < bounds.halfHeight + otherBounds.halfHeight + 4;
+        });
+        if (overlaps) {
+          entities.pop(); // spawn() appended this candidate; it never becomes active.
+          continue;
+        }
+      }
       if (e.type === 'jump') {
         // Reserve the maximum flight distance plus landing room.
         jumpLanes.set(`${key}:${i}`, { x, start: y - 28, end: y + MAX_SPEED * 1.9 + 210 });
