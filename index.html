@@ -569,6 +569,11 @@ body:has(#nameGate:not([hidden])) .mountain { height: 100dvh; min-height: 0; bor
 
 /* Analog steering stick. */
 .joystick { position: relative; flex: 0 0 auto; width: 124px; height: 124px; pointer-events: auto; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+@media (pointer: coarse), (max-width: 700px), (max-height: 500px) {
+  #mobileControls .joystick { position: fixed; left: 0; top: 0; transform: translate(-50%, -50%); visibility: hidden; pointer-events: none; }
+  #mobileControls .joystick.active { visibility: visible; }
+  #mobileControls .jump-button { margin-left: auto; }
+}
 .joystick-base { position: absolute; inset: 0; border: 3px solid #8baacb; border-radius: 50%; background: radial-gradient(circle at 50% 38%, #174c88 0, #0b2242 68%, #05101e 100%); box-shadow: inset 0 3px 10px #000a, 0 3px 0 #05101e; }
 .joystick-base::before, .joystick-base::after { content: ''; position: absolute; background: #8baacb55; }
 .joystick-base::before { left: 14%; right: 14%; top: 50%; height: 2px; }
@@ -739,6 +744,9 @@ body:has(#storyDialogue:not([hidden])) .mountain > :not(#game):not(#rotateNotice
   #joystick, #joystick *, #mobileControls .jump-button { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-user-drag: none; }
 }
 .story-copy #storyText { white-space: pre-line; }
+@media (pointer: coarse), (max-width: 700px), (max-height: 500px) {
+  #mobileControls .jump-button { margin-left: auto; }
+}
 
 </style></head>
 <body data-ui-theme="news">
@@ -860,7 +868,7 @@ body:has(#storyDialogue:not([hidden])) .mountain > :not(#game):not(#rotateNotice
               <li><strong>Brake + left/right:</strong> slide sideways and slow down.</li>
               <li><strong>Space / left-click:</strong> small hop. Rainbow ramps launch you higher.</li>
               <li><strong>P:</strong> pause or resume. The pause menu includes sound settings and your powers.</li>
-              <li><strong>Phones / tablets:</strong> rotate to landscape, then drag the left joystick to steer and push it up to brake. Tap anywhere on the slope or press the JUMP button to hop.</li>
+              <li><strong>Phones / tablets:</strong> rotate to landscape, touch and drag anywhere on the slope to steer; drag up to brake. Press the JUMP button to hop.</li>
             </ul>
             <p>Straight downhill builds speed. Gentle turns keep momentum.</p>
           </section>
@@ -2665,11 +2673,12 @@ const mobileControls = document.getElementById('mobileControls');
 const joystick = document.getElementById('joystick');
 const joystickKnob = document.getElementById('joystickKnob');
 let joystickAxis = 0, joystickBrake = 0, joystickPointer = null;
+let joystickOriginX = 0, joystickOriginY = 0;
 function setJoystickPosition(clientX, clientY) {
   const rect = joystick.getBoundingClientRect();
   const max = rect.width * .3;
-  const dx = clamp(clientX - (rect.left + rect.width / 2), -max, max);
-  const dy = clamp(clientY - (rect.top + rect.height / 2), -max, max);
+  const dx = clamp(clientX - joystickOriginX, -max, max);
+  const dy = clamp(clientY - joystickOriginY, -max, max);
   joystickAxis = Math.abs(dx) / max < .14 ? 0 : clamp(dx / max, -1, 1);
   const up = -dy / max;
   joystickBrake = up > .15 ? clamp((up - .15) / .85, 0, 1) : 0;
@@ -2681,22 +2690,6 @@ function resetJoystick() {
   joystick.classList.remove('active');
   joystickKnob.style.setProperty('--jx', '0px');
   joystickKnob.style.setProperty('--jy', '0px');
-}
-joystick.addEventListener('pointerdown', e => {
-  if (mode !== 'playing') return;
-  e.preventDefault(); gameAudio.unlock(); touch = null;
-  joystickPointer = e.pointerId;
-  joystick.classList.add('active');
-  joystick.setPointerCapture(e.pointerId);
-  setJoystickPosition(e.clientX, e.clientY);
-});
-joystick.addEventListener('pointermove', e => {
-  if (e.pointerId !== joystickPointer) return;
-  e.preventDefault();
-  setJoystickPosition(e.clientX, e.clientY);
-});
-for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) {
-  joystick.addEventListener(event, e => { if (e.pointerId === joystickPointer) resetJoystick(); });
 }
 joystick.addEventListener('contextmenu', e => e.preventDefault());
 const heldPointers = new Map();
@@ -2769,12 +2762,29 @@ document.addEventListener('contextmenu', event => { if (coarsePointer.matches &&
 function pointer(e) { const r = canvas.getBoundingClientRect(); touch = { x: (e.clientX - r.left) / cameraZoom, y: (e.clientY - r.top) / cameraZoom }; }
 canvas.addEventListener('pointerdown', e => {
   gameAudio.unlock();
+  if (compactView() && e.pointerType === 'touch') {
+    if (mode !== 'playing' || joystickPointer !== null) return;
+    e.preventDefault(); touch = null;
+    joystickPointer = e.pointerId;
+    joystickOriginX = e.clientX; joystickOriginY = e.clientY;
+    joystick.style.left = `${e.clientX}px`; joystick.style.top = `${e.clientY}px`;
+    joystick.classList.add('active');
+    canvas.setPointerCapture(e.pointerId);
+    setJoystickPosition(e.clientX, e.clientY);
+    return;
+  }
   if (e.button !== 0 || !e.isPrimary) return;
   if (compactView()) { e.preventDefault(); hop(); return; }
   canvas.setPointerCapture(e.pointerId); pointer(e); hop();
 });
-canvas.addEventListener('pointermove', e => { if (touch) pointer(e); });
-for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) canvas.addEventListener(event, () => { touch = null; });
+canvas.addEventListener('pointermove', e => {
+  if (e.pointerId === joystickPointer) { e.preventDefault(); setJoystickPosition(e.clientX, e.clientY); }
+  else if (touch) pointer(e);
+});
+for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) canvas.addEventListener(event, e => {
+  if (e.pointerId === joystickPointer) resetJoystick();
+  else if (e.isPrimary) touch = null;
+});
 // Bump centers and half-widths: single moguls, pairs, and irregular snow fields.
 const SNOW_SHAPES = [
   [[0, 0, 10]],
