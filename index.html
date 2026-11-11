@@ -757,6 +757,9 @@ body:has(#storyDialogue:not([hidden])) .mountain > :not(#game):not(#rotateNotice
 #livingRoomArt { position: absolute; inset: 0; width: 100%; height: 100%; display: block; image-rendering: pixelated; user-select: none; }
 #tvStartPrompt { position: absolute; left: 0; right: 0; bottom: 5%; z-index: 4; text-align: center; color: #fff; font-size: clamp(10px, 1.6vw, 20px); line-height: 1.5; text-shadow: none; pointer-events: none; animation: start-prompt-pulse 2s ease-in-out infinite; }
 @keyframes start-prompt-pulse { 0%, 30%, 100% { opacity: 1; } 65% { opacity: .4; } }
+@media (pointer: coarse) and (prefers-reduced-motion: no-preference) {
+  #tvStartPrompt { animation: start-prompt-pulse 2s ease-in-out infinite; will-change: opacity; transform: translateZ(0); }
+}
 #overlay.tv-awake #tvStartPrompt { display: none; }
 .living-tv-screen { position: absolute; left: 27.8%; top: 17.3%; width: 32.9%; height: 43.5%; overflow: hidden; border-radius: 12% / 16%; background: #101115; }
 #tvBroadcastSlot { position: absolute; inset: 0; overflow: hidden; }
