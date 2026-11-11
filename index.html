@@ -869,6 +869,8 @@ body:has(#storyDialogue:not([hidden])) .mountain > :not(#game):not(#rotateNotice
         <button id="resumeRun" type="button">RESUME</button>
         <button id="viewPowers" type="button" hidden>POWERS</button>
         <button id="viewSound" type="button">SOUND</button>
+        <button class="fullscreen-toggle" type="button" aria-pressed="false">FULLSCREEN</button>
+        <p class="fullscreen-status" role="status" hidden></p>
         <button id="quitRun" type="button">QUIT</button>
       </div>
     </section>
@@ -971,7 +973,7 @@ body:has(#storyDialogue:not([hidden])) .mountain > :not(#game):not(#rotateNotice
         <div id="tvScreen" class="living-tv-screen" hidden>
           <div id="tvBroadcastSlot"></div>
           <div id="tvGamePanel" class="living-channel" hidden><button id="tvPlay" type="button">▶ PLAY STORY</button><div id="tvLeaderboardSlot"></div></div>
-          <div id="tvOptionsPanel" class="living-channel" hidden><h2>OPTIONS</h2><div id="tvOptionsSound"></div><h2>CHEATS</h2><form id="tvCheatForm"><label for="tvCheatInput">ENTER CHEAT CODE</label><input id="tvCheatInput" inputmode="numeric" maxlength="20" autocomplete="off"><button type="submit">ACTIVATE</button><p id="tvCheatMessage" role="status"></p></form></div>
+          <div id="tvOptionsPanel" class="living-channel" hidden><h2>OPTIONS</h2><div id="tvOptionsSound"></div><button class="fullscreen-toggle" type="button" aria-pressed="false">FULLSCREEN</button><p class="fullscreen-status" role="status" hidden></p><h2>CHEATS</h2><form id="tvCheatForm"><label for="tvCheatInput">ENTER CHEAT CODE</label><input id="tvCheatInput" inputmode="numeric" maxlength="20" autocomplete="off"><button type="submit">ACTIVATE</button><p id="tvCheatMessage" role="status"></p></form></div>
           <div id="tvHelpPanel" class="living-channel" hidden><h2>HOW TO PLAY</h2><div id="tvHelpCopy"></div></div>
           <div id="tvStatic" class="living-static" hidden aria-hidden="true"></div>
         </div>
@@ -2345,6 +2347,41 @@ function compactView() {
 function pauseLabel() {
   return `${mode === 'paused' ? 'Resume' : 'Pause'}${compactView() ? '' : ' · P'}`;
 }
+function fullscreenElement() { return document.fullscreenElement || document.webkitFullscreenElement; }
+function updateFullscreenControls() {
+  const active = !!fullscreenElement();
+  document.querySelectorAll('.fullscreen-toggle').forEach(button => {
+    button.textContent = active ? 'EXIT FULLSCREEN' : 'FULLSCREEN';
+    button.setAttribute('aria-pressed', String(active));
+  });
+}
+async function toggleFullscreen() {
+  const messages = document.querySelectorAll('.fullscreen-status');
+  messages.forEach(message => { message.hidden = true; });
+  try {
+    if (fullscreenElement()) {
+      const exit = document.exitFullscreen || document.webkitExitFullscreen;
+      if (!exit) throw new Error('Fullscreen unavailable');
+      await exit.call(document);
+    } else {
+      const target = document.documentElement;
+      const request = target.requestFullscreen || target.webkitRequestFullscreen;
+      if (!request) throw new Error('Fullscreen unavailable');
+      await request.call(target);
+    }
+    updateFullscreenControls();
+  } catch (error) {
+    messages.forEach(message => {
+      message.textContent = 'Fullscreen is unavailable in this browser. On iPhone, try Share → Add to Home Screen.';
+      message.hidden = false;
+    });
+  }
+}
+document.querySelectorAll('.fullscreen-toggle').forEach(button => button.addEventListener('click', toggleFullscreen));
+for (const event of ['fullscreenchange', 'webkitfullscreenchange']) document.addEventListener(event, () => {
+  updateFullscreenControls();
+  resize(); layoutMenuArt();
+});
 function resize() {
   const oldBoardY = board.y;
   const viewport = canvas.getBoundingClientRect();
