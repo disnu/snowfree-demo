@@ -751,7 +751,8 @@ body:has(#storyDialogue:not([hidden])) .mountain > :not(#game):not(#rotateNotice
 .living-room { position: absolute; left: 50%; top: 50%; width: min(100%, 177.7778vh); aspect-ratio: 16 / 9; transform: translate(-50%, -50%); transform-origin: 50% 39%; transition: transform .55s ease-in-out; }
 #overlay.tv-awake .living-room { transform: translate(-50%, -50%) scale(1.15); }
 @media (pointer: coarse) {
-  #overlay.tv-awake .living-room { transform-origin: 50% 23%; transform: translate(-50%, -50%) scale(1.45); }
+  #overlay .living-room { transform-origin: 50% 8%; }
+  #overlay.tv-awake .living-room { transform: translate(-50%, -50%) scale(1.45); }
 }
 #livingRoomArt { position: absolute; inset: 0; width: 100%; height: 100%; display: block; image-rendering: pixelated; user-select: none; }
 #tvStartPrompt { position: absolute; left: 0; right: 0; bottom: 5%; z-index: 4; text-align: center; color: #fff; font-size: clamp(10px, 1.6vw, 20px); line-height: 1.5; text-shadow: none; pointer-events: none; animation: start-prompt-pulse 2s ease-in-out infinite; }
